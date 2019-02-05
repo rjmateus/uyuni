@@ -320,4 +320,19 @@ public class ContentManager {
             throw new PermissionException(ORG_ADMIN);
         }
     }
+
+    public void publishProject(String projectLabel, User user) {
+        ContentProject contentProject = lookupProject(projectLabel, user).get();
+        contentProject.getFirstEnvironmentOpt().orElseThrow(() -> new IllegalStateException("todo"));
+        contentProject.getSources().forEach(s -> {
+            SoftwareProjectSource softwareProjectSource = s.asSoftwareSource().get();
+            Channel target = findTarget(softwareProjectSource.getChannel());
+            target.addPackage();
+        });
+    }
+
+    private Channel findTarget(Channel channel) {
+        // find or clone
+        return null;
+    }
 }

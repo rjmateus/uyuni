@@ -44,6 +44,8 @@ public abstract class ProjectSource {
     private Long id;
     private ContentProject contentProject;
 
+    public abstract void publish();
+
     /**
      * Utility enum for the ProjectSource types
      */

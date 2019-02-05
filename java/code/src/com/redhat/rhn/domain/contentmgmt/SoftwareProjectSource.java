@@ -16,6 +16,7 @@
 package com.redhat.rhn.domain.contentmgmt;
 
 import com.redhat.rhn.domain.channel.Channel;
+import com.redhat.rhn.manager.channel.CloneChannelCommand;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -35,6 +36,12 @@ import static java.util.Optional.of;
 public class SoftwareProjectSource extends ProjectSource {
 
     private Channel channel;
+
+    @Override
+    public void publish() {
+        CloneChannelCommand c = new CloneChannelCommand(false, channel);
+        c.create();
+    }
 
     /**
      * Standard constructor

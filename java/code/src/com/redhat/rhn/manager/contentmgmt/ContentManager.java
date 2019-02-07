@@ -22,25 +22,25 @@ import com.redhat.rhn.domain.contentmgmt.ContentEnvironment;
 import com.redhat.rhn.domain.contentmgmt.ContentManagementException;
 import com.redhat.rhn.domain.contentmgmt.ContentProject;
 import com.redhat.rhn.domain.contentmgmt.ContentProjectFactory;
-import com.redhat.rhn.domain.contentmgmt.ContentProjectHistoryEntry;
 import com.redhat.rhn.domain.contentmgmt.EnvironmentTarget;
 import com.redhat.rhn.domain.contentmgmt.ProjectSource;
 import com.redhat.rhn.domain.contentmgmt.ProjectSource.Type;
+import com.redhat.rhn.domain.contentmgmt.SoftwareEnvironmentTarget;
 import com.redhat.rhn.domain.contentmgmt.SoftwareProjectSource;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.manager.EntityExistsException;
 import com.redhat.rhn.manager.EntityNotExistsException;
 import com.redhat.rhn.manager.channel.ChannelManager;
-import com.suse.utils.Opt;
+import com.redhat.rhn.manager.channel.CloneChannelCommand;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import javax.persistence.EntityNotFoundException;
-
 import static com.redhat.rhn.domain.contentmgmt.ProjectSource.Type.SW_CHANNEL;
 import static com.redhat.rhn.domain.role.RoleFactory.ORG_ADMIN;
+import static com.redhat.rhn.manager.channel.CloneChannelCommand.CloneBehavior.EMPTY;
+import static com.suse.utils.Opt.or;
 import static com.suse.utils.Opt.stream;
 
 /**
@@ -318,20 +318,52 @@ public class ContentManager {
     }
 
     // todo history
-    public void publishProject(String projectLabel, User user) {
+    public static void publishProject(String projectLabel, User user) {
         ContentProject project = lookupProject(projectLabel, user)
                 .orElseThrow(() -> new EntityNotExistsException(projectLabel));
         ContentEnvironment firstEnv = project.getFirstEnvironmentOpt()
                 .orElseThrow(() -> new ContentManagementException("Cannot publish  project: " + projectLabel +
                         " with no environments."));
+        SoftwareProjectSource leader = ContentProjectFactory.lookupSWChannelLeader(project).orElseThrow(
+                () -> new ContentManagementException("Cannot publish  project: " + projectLabel +
+                        " with no channels.")); // todo questionable! what about other types of sources?
 
-        Stream<SoftwareProjectSource> sources = project.getSources().stream()
-                .flatMap(s -> stream(s.asSoftwareSource()));
+        cloneStuff(leader, project.getSources().stream().flatMap(s -> stream(s.asSoftwareSource())), firstEnv, user);
+    }
+    private static void cloneStuff(SoftwareProjectSource leader, Stream<SoftwareProjectSource> sources,
+            ContentEnvironment env, User user) {
+        SoftwareEnvironmentTarget leaderTarget = ContentProjectFactory
+                .lookupEnvironmentTargetByChannel(leader.getChannel())
+                .orElse(createTarget(leader, env, user));
+        System.out.println("Cloned " + leaderTarget);
+    }
 
-        Optional<SoftwareProjectSource> leadingChannel = sources.findFirst();
+    private static SoftwareEnvironmentTarget createTarget(SoftwareProjectSource leader, ContentEnvironment env,
+            User user) {
+        Channel original = leader.getChannel();
+        CloneChannelCommand cloneCmd = new CloneChannelCommand(EMPTY, original);
+        cloneCmd.setUser(user);
+        cloneCmd.setLabel(original.getLabel() + "-" + env.getLabel());
+        cloneCmd.setSummary(original.getSummary() + " dev");
+        cloneCmd.setChecksumLabel(original.getChecksumTypeLabel());
+        Channel clone = cloneCmd.create();
+        SoftwareEnvironmentTarget target = new SoftwareEnvironmentTarget(env, clone);
+        ContentProjectFactory.save(target);
+        return target;
+    }
 
-        sources
-                .forEach(s -> findOrCreateTarget(firstEnv, s));
+    /**
+     * Make sure that targets for publishing exist
+     *
+     * @param sources the stream of {@link SoftwareProjectSource}, where the 1st element is the "leader" base channel
+     */
+    private void ensureTargetChannelExist(Stream<SoftwareProjectSource> sources) {
+        Optional<SoftwareProjectSource> first = sources.findFirst();
+        if (!first.isPresent()) {
+            return;
+        }
+        SoftwareProjectSource leadingChannel = first.get();
+
     }
 
     private EnvironmentTarget findOrCreateTarget(ContentEnvironment firstEnv, SoftwareProjectSource source) {

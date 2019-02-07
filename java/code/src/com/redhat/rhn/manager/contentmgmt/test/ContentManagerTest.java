@@ -381,4 +381,14 @@ public class ContentManagerTest extends BaseTestCaseWithUser {
                 .list()
                 .isEmpty());
     }
+
+    public void testTest() throws Exception {
+        ContentProject cp = new ContentProject("cplabel", "cpname", "cpdesc", user.getOrg());
+        ContentProjectFactory.save(cp);
+        ContentManager.createEnvironment(cp.getLabel(), empty(), "fst", "first env", "desc", user);
+        Channel channel = ChannelTestUtils.createBaseChannel(user);
+
+        ContentManager.attachSource("cplabel", SW_CHANNEL, channel.getLabel(), user);
+        ContentManager.publishProject("cplabel", user);
+    }
 }

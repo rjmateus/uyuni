@@ -335,9 +335,7 @@ public class ContentProjectFactoryTest extends BaseTestCaseWithUser {
         cp.setFirstEnvironment(envdev);
         Channel channel = ChannelTestUtils.createBaseChannel(user);
 
-        SoftwareEnvironmentTarget target = new SoftwareEnvironmentTarget();
-        target.setContentEnvironment(envdev);
-        target.setChannel(channel);
+        SoftwareEnvironmentTarget target = new SoftwareEnvironmentTarget(envdev, channel);
         ContentProjectFactory.save(target);
 
         assertEquals(target, ContentProjectFactory.lookupEnvironmentTargetByChannel(channel).get());

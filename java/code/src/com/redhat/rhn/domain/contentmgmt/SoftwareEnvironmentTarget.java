@@ -30,6 +30,23 @@ import javax.persistence.OneToOne;
 @DiscriminatorValue("software")
 public class SoftwareEnvironmentTarget extends EnvironmentTarget {
 
+    /**
+     * Standard constructor
+     */
+    public SoftwareEnvironmentTarget() {
+    }
+
+    /**
+     * Standard constructor
+     *
+     * @param envIn the environment
+     * @param channelIn the channel
+     */
+    public SoftwareEnvironmentTarget(ContentEnvironment envIn, Channel channelIn) {
+        super(envIn);
+        this.channel = channelIn;
+    }
+
     private Channel channel;
 
     /**

@@ -43,6 +43,21 @@ public abstract class EnvironmentTarget {
     private ContentEnvironment contentEnvironment;
 
     /**
+     * Standard constructor
+     */
+    public EnvironmentTarget() {
+    }
+
+    /**
+     * Standard constructor
+     *
+     * @param contentEnvironment the Environment
+     */
+    public EnvironmentTarget(ContentEnvironment contentEnvironment) {
+        this.contentEnvironment = contentEnvironment;
+    }
+
+    /**
      * Gets the id.
      *
      * @return id

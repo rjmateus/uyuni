@@ -26,6 +26,7 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 
+import static com.redhat.rhn.manager.channel.CloneChannelCommand.CloneBehavior.EMPTY;
 import static java.util.Optional.of;
 
 /**
@@ -40,7 +41,7 @@ public class SoftwareProjectSource extends ProjectSource {
 
     @Override
     public void publish() {
-        CloneChannelCommand c = new CloneChannelCommand(false, channel);
+        CloneChannelCommand c = new CloneChannelCommand(EMPTY, channel);
         c.create();
     }
 

@@ -36,6 +36,7 @@ import static java.util.Optional.of;
 public class SoftwareProjectSource extends ProjectSource {
 
     private Channel channel;
+    private boolean leader;
 
     @Override
     public void publish() {

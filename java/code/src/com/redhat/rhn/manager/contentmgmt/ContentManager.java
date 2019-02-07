@@ -19,8 +19,11 @@ import com.redhat.rhn.common.hibernate.LookupException;
 import com.redhat.rhn.common.security.PermissionException;
 import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.contentmgmt.ContentEnvironment;
+import com.redhat.rhn.domain.contentmgmt.ContentManagementException;
 import com.redhat.rhn.domain.contentmgmt.ContentProject;
 import com.redhat.rhn.domain.contentmgmt.ContentProjectFactory;
+import com.redhat.rhn.domain.contentmgmt.ContentProjectHistoryEntry;
+import com.redhat.rhn.domain.contentmgmt.EnvironmentTarget;
 import com.redhat.rhn.domain.contentmgmt.ProjectSource;
 import com.redhat.rhn.domain.contentmgmt.ProjectSource.Type;
 import com.redhat.rhn.domain.contentmgmt.SoftwareProjectSource;
@@ -28,12 +31,17 @@ import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.manager.EntityExistsException;
 import com.redhat.rhn.manager.EntityNotExistsException;
 import com.redhat.rhn.manager.channel.ChannelManager;
+import com.suse.utils.Opt;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
+
+import javax.persistence.EntityNotFoundException;
 
 import static com.redhat.rhn.domain.contentmgmt.ProjectSource.Type.SW_CHANNEL;
 import static com.redhat.rhn.domain.role.RoleFactory.ORG_ADMIN;
+import static com.suse.utils.Opt.stream;
 
 /**
  * Content Management functionality
@@ -309,6 +317,27 @@ public class ContentManager {
         return ContentProjectFactory.lookupProjectSource(project, sourceType, sourceLabel, user);
     }
 
+    // todo history
+    public void publishProject(String projectLabel, User user) {
+        ContentProject project = lookupProject(projectLabel, user)
+                .orElseThrow(() -> new EntityNotExistsException(projectLabel));
+        ContentEnvironment firstEnv = project.getFirstEnvironmentOpt()
+                .orElseThrow(() -> new ContentManagementException("Cannot publish  project: " + projectLabel +
+                        " with no environments."));
+
+        Stream<SoftwareProjectSource> sources = project.getSources().stream()
+                .flatMap(s -> stream(s.asSoftwareSource()));
+
+        Optional<SoftwareProjectSource> leadingChannel = sources.findFirst();
+
+        sources
+                .forEach(s -> findOrCreateTarget(firstEnv, s));
+    }
+
+    private EnvironmentTarget findOrCreateTarget(ContentEnvironment firstEnv, SoftwareProjectSource source) {
+        return null;
+    }
+
     /**
      * Ensures that given user has the Org admin role
      *
@@ -319,20 +348,5 @@ public class ContentManager {
         if (!user.hasRole(ORG_ADMIN)) {
             throw new PermissionException(ORG_ADMIN);
         }
-    }
-
-    public void publishProject(String projectLabel, User user) {
-        ContentProject contentProject = lookupProject(projectLabel, user).get();
-        contentProject.getFirstEnvironmentOpt().orElseThrow(() -> new IllegalStateException("todo"));
-        contentProject.getSources().forEach(s -> {
-            SoftwareProjectSource softwareProjectSource = s.asSoftwareSource().get();
-            Channel target = findTarget(softwareProjectSource.getChannel());
-            target.addPackage();
-        });
-    }
-
-    private Channel findTarget(Channel channel) {
-        // find or clone
-        return null;
     }
 }

@@ -156,7 +156,7 @@ class KSDirLocalParser(KSDirParser):
                 dir_item_path = os.path.join(dir_path, dir_item)
                 if os.path.isdir(dir_item_path):
                     file_type = 'DIR'
-                    dir_item = "%s/" % dir_item
+                    dir_item = "{}/".format(dir_item)
                 else:
                     file_type = 'FILE'
                 if dir_item not in self.file_blacklist:
@@ -503,14 +503,14 @@ class RepoSync(object):
 
             for url in data['source_url']:
                 try:
-                    if '://' not in url:
+                    if b'://' not in url:
                         raise Exception("Unknown protocol in repo URL: %s" % url)
 
                     # If the repository uses a uln:// URL, switch to the ULN plugin, overriding the command-line
-                    if url.startswith("uln://"):
+                    if url.startswith(b"uln://"):
                         repo_type = "uln"
 
-                    is_non_local_repo = (url.find("file:/") < 0)
+                    is_non_local_repo = (url.find(b"file:/") < 0)
                     self.repo_plugin = self.load_plugin(repo_type)
 
                     if data['repo_label']:
@@ -1614,10 +1614,10 @@ class RepoSync(object):
                            "for this URL: "+url.getURL(), stream=sys.stderr)
                 sys.exit(1)
             url.username = credentials['username']
-            url.password = base64.decodestring(credentials['password'])
+            url.password = base64.decodebytes(credentials['password'])
             # remove query parameter from url
             url.query = ""
-        return url.getURL()
+        return url.getURL().encode()
 
     def upload_patches(self, notices):
         """Insert the information from patches into the database

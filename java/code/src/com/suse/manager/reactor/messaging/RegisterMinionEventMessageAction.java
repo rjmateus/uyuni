@@ -425,8 +425,16 @@ public class RegisterMinionEventMessageAction implements MessageAction {
         ManagedServerGroup hwGroup = ServerGroupFactory.lookupByNameAndOrg(hwTypeGroup, org);
 
         if (terminalsGroup == null || branchIdGroup == null) {
-            throw new IllegalStateException("Missing required server groups (\"" + TERMINALS_GROUP_NAME + "\" or \"" +
-                    branchIdGroupName + "\")! Aborting registration.");
+            if (terminalsGroup == null) {
+                terminalsGroup = Server.GroupFactory.create(TERMINALS_GROUP_NAME, "", org);
+            }
+            if (branchIdGroup == null) {
+                branchIdGroup = Server.GroupFactory.create(branchIdGroupName, "", org);
+            }
+            if (terminalsGroup == null || branchIdGroup == null) {
+              throw new IllegalStateException("Unable to create required server groups (\"" + TERMINALS_GROUP_NAME + "\" or \"" +
+                      branchIdGroupName + "\")! Aborting registration.");
+            }
         }
 
         SystemManager.addServerToServerGroup(minion, terminalsGroup);

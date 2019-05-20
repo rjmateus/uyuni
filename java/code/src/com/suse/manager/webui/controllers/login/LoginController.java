@@ -21,6 +21,7 @@ import static spark.Spark.post;
 
 import com.redhat.rhn.common.conf.Config;
 import com.redhat.rhn.common.conf.ConfigDefaults;
+import com.redhat.rhn.common.conf.sso.SSOConfig;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.frontend.action.LoginAction;
 import com.redhat.rhn.frontend.action.LoginHelper;
@@ -30,8 +31,11 @@ import com.redhat.rhn.manager.user.UserManager;
 import com.suse.utils.Json;
 
 import com.google.gson.Gson;
+import com.onelogin.saml2.Auth;
+import com.onelogin.saml2.exception.SettingsException;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -70,35 +74,47 @@ public class LoginController {
      * @return the model and view
      */
     public static ModelAndView loginView(Request request, Response response) {
-        // Redirect to user creation if needed
-        if (!UserManager.satelliteHasUsers()) {
-            response.redirect(URL_CREATE_FIRST_USER);
+        if (ConfigDefaults.get().isSingleSignOnEnabled() && SSOConfig.getSSOSettings().isPresent()) {
+            try {
+                Auth auth = new Auth(SSOConfig.getSSOSettings().get(), request.raw(), response.raw());
+                auth.login("/rhn/YourRhn.do");
+            }
+            catch (SettingsException | IOException e) {
+                log.error(e.getMessage());
+            }
+            return null; // we forward the request to IdP via `auth.login`
         }
+        else {
+            // Redirect to user creation if needed
+            if (!UserManager.satelliteHasUsers()) {
+                response.redirect(URL_CREATE_FIRST_USER);
+            }
 
-        // Handle "url_bounce" parameters
-        String urlBounce = request.queryParams("url_bounce");
-        String reqMethod = request.queryParams("request_method");
-        urlBounce = LoginAction.updateUrlBounce(urlBounce, reqMethod);
+            // Handle "url_bounce" parameters
+            String urlBounce = request.queryParams("url_bounce");
+            String reqMethod = request.queryParams("request_method");
+            urlBounce = LoginAction.updateUrlBounce(urlBounce, reqMethod);
 
-        // In case we are authenticated go directly to redirect target
-        if (AclManager.hasAcl("user_authenticated()", request.raw(), null)) {
-            log.debug("Already authenticated, redirecting to: " + urlBounce);
-            response.redirect(urlBounce);
+            // In case we are authenticated go directly to redirect target
+            if (AclManager.hasAcl("user_authenticated()", request.raw(), null)) {
+                log.debug("Already authenticated, redirecting to: " + urlBounce);
+                response.redirect(urlBounce);
+            }
+
+            Map<String, Object> model = new HashMap<>();
+            model.put("url_bounce", urlBounce);
+            model.put("isUyuni", ConfigDefaults.get().isUyuni());
+            model.put("request_method", reqMethod);
+            model.put("validationErrors", Json.GSON.toJson(LoginHelper.validateDBVersion()));
+            model.put("schemaUpgradeRequired", Json.GSON.toJson(LoginHelper.isSchemaUpgradeRequired()));
+            model.put("webVersion", Config.get().getString("web.version"));
+            model.put("productName", Config.get().getString(ConfigDefaults.PRODUCT_NAME));
+            model.put("customHeader", Config.get().getString("java.custom_header"));
+            model.put("customFooter", Config.get().getString("java.custom_footer"));
+            model.put("legalNote", Config.get().getString("java.legal_note"));
+
+            return new ModelAndView(model, "controllers/login/templates/login.jade");
         }
-
-        Map<String, Object> model = new HashMap<>();
-        model.put("url_bounce", urlBounce);
-        model.put("isUyuni", ConfigDefaults.get().isUyuni());
-        model.put("request_method", reqMethod);
-        model.put("validationErrors", Json.GSON.toJson(LoginHelper.validateDBVersion()));
-        model.put("schemaUpgradeRequired", Json.GSON.toJson(LoginHelper.isSchemaUpgradeRequired()));
-        model.put("webVersion", Config.get().getString("web.version"));
-        model.put("productName", Config.get().getString(ConfigDefaults.PRODUCT_NAME));
-        model.put("customHeader", Config.get().getString("java.custom_header"));
-        model.put("customFooter", Config.get().getString("java.custom_footer"));
-        model.put("legalNote", Config.get().getString("java.legal_note"));
-
-        return new ModelAndView(model, "controllers/login/templates/login.jade");
     }
 
     /**

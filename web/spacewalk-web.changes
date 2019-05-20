@@ -1,3 +1,4 @@
+- Migrate login to Spark
 - Fix big formula checkbox not supported in Firefox
 - Allow forcing off or resetting VMs
 - Adjust title icons

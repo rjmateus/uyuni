@@ -72,11 +72,117 @@ public class LoginHelper {
     private static final String DEFAULT_KERB_USER_PASSWORD = "0";
     private static final Long MIN_PG_DB_VERSION = 90600L;
     private static final String MIN_PG_DB_VERSION_STRING = "9.6";
+    public static final String DEFAULT_URL_BOUNCE = "/rhn/YourRhn.do";
 
     /**
      * Utility classes can't be instantiated.
      */
     private LoginHelper() {
+    }
+
+    /**
+     * check whether we can login an externally authenticated user
+     * @param request request
+     * @param messages messages
+     * @param errors errors
+     * @return user, if externally authenticated
+     */
+    public static User checkExternalAuthentication(HttpServletRequest request,
+                                                   List<String> messages,
+                                                   List<String> errors) {
+        String remoteUserString = request.getRemoteUser();
+        User remoteUser = null;
+        if (remoteUserString != null) {
+            String firstname = decodeFromIso88591(
+                    (String) request.getAttribute("REMOTE_USER_FIRSTNAME"), "");
+            String lastname = decodeFromIso88591(
+                    (String) request.getAttribute("REMOTE_USER_LASTNAME"), "");
+            String email = decodeFromIso88591(
+                    (String) request.getAttribute("REMOTE_USER_EMAIL"), null);
+
+            Set<String> extGroups = getExtGroups(request);
+            Set<Role> roles = getRolesFromExtGroups(extGroups);
+
+            try {
+                remoteUser = UserFactory.lookupByLogin(remoteUserString);
+
+                if (remoteUser.isDisabled()) {
+                    errors.add("Account " + remoteUser.getLogin() + " has been deactivated.");
+                    remoteUser = null;
+                }
+                if (remoteUser != null) {
+                    UpdateUserCommand updateCmd = new UpdateUserCommand(remoteUser);
+                    if (!StringUtils.isEmpty(firstname)) {
+                        updateCmd.setFirstNames(firstname);
+                    }
+                    if (!StringUtils.isEmpty(lastname)) {
+                        updateCmd.setLastName(lastname);
+                    }
+                    if (!StringUtils.isEmpty(email)) {
+                        updateCmd.setEmail(email);
+                    }
+                    updateCmd.setTemporaryRoles(roles);
+                    updateCmd.updateUser();
+                    log.warn("Externally authenticated login " + remoteUserString +
+                            " (" + firstname + " " + lastname + ")");
+                }
+            }
+            catch (LookupException le) {
+                Org newUserOrg = null;
+                Boolean useOrgUnit = SatConfigFactory.getSatConfigBooleanValue(
+                        SatConfigFactory.EXT_AUTH_USE_ORGUNIT);
+                if (useOrgUnit) {
+                    String orgUnitString =
+                            (String) request.getAttribute("REMOTE_USER_ORGUNIT");
+                    newUserOrg = OrgFactory.lookupByName(orgUnitString);
+                    if (newUserOrg == null) {
+                        log.error("Cannot find organization with name: " + orgUnitString);
+                    }
+                }
+                if (newUserOrg == null) {
+                    Long defaultOrgId = SatConfigFactory.getSatConfigLongValue(
+                            SatConfigFactory.EXT_AUTH_DEFAULT_ORGID);
+                    if (defaultOrgId != null) {
+                        newUserOrg = OrgFactory.lookupById(defaultOrgId);
+                        if (newUserOrg == null) {
+                            log.error("Cannot find organization with id: " + defaultOrgId);
+                        }
+                    }
+                }
+                if (newUserOrg != null) {
+                    Set<ServerGroup> sgs = getSgsFromExtGroups(extGroups, newUserOrg);
+                    try {
+                        CreateUserCommand createCmd = new CreateUserCommand();
+                        createCmd.setLogin(remoteUserString);
+                        // set a password, that cannot really be used
+                        createCmd.setRawPassword(DEFAULT_KERB_USER_PASSWORD);
+                        createCmd.setFirstNames(firstname);
+                        createCmd.setLastName(lastname);
+                        createCmd.setEmail(email);
+                        createCmd.setOrg(newUserOrg);
+                        createCmd.setTemporaryRoles(roles);
+                        createCmd.setServerGroups(sgs);
+                        createCmd.validate();
+                        createCmd.storeNewUser();
+                        remoteUser = createCmd.getUser();
+                        log.warn("Externally authenticated login " + remoteUserString +
+                                " (" + firstname + " " + lastname + ") created in " +
+                                newUserOrg.getName() + ".");
+                    }
+                    catch (WrappedSQLException wse) {
+                        log.error("Creation of user failed with: " + wse.getMessage());
+                        HibernateFactory.rollbackTransaction();
+                    }
+                }
+                if (remoteUser != null &&
+                        remoteUser.getPassword().equals(DEFAULT_KERB_USER_PASSWORD)) {
+                    messages.add("You've logged as externally authenticated " + remoteUser.getLogin() + "user. To be " +
+                            "able to login using this account with login and password, please set your password on " +
+                            "the user details page.");
+                }
+            }
+        }
+        return remoteUser;
     }
 
     /**
@@ -278,7 +384,7 @@ public class LoginHelper {
         String urlBounce = request.getParameter("url_bounce");
         String reqMethod = request.getParameter("request_method");
 
-        urlBounce = LoginAction.updateUrlBounce(urlBounce, reqMethod);
+        urlBounce = updateUrlBounce(urlBounce, reqMethod);
         try {
             if (urlBounce != null) {
                 log.info("redirect: " + urlBounce);
@@ -293,11 +399,36 @@ public class LoginHelper {
     }
 
     /**
+     * update url_bounce
+     * @param urlBounce url_bounce
+     * @param requestMethod request method
+     * @return updated url_bounce
+     */
+    public static String updateUrlBounce(String urlBounce, String requestMethod) {
+        if (StringUtils.isBlank(urlBounce)) {
+            urlBounce = DEFAULT_URL_BOUNCE;
+        }
+        else {
+            String urlBounceTrimmed = urlBounce.trim();
+            if (urlBounceTrimmed.equals("/rhn/") ||
+                    urlBounceTrimmed.endsWith("Logout.do") ||
+                    !urlBounceTrimmed.startsWith("/")) {
+                urlBounce = DEFAULT_URL_BOUNCE;
+            }
+        }
+        if (requestMethod != null && requestMethod.equals("POST")) {
+            urlBounce = DEFAULT_URL_BOUNCE;
+        }
+        return urlBounce;
+    }
+
+
+    /**
      * Schedule update of the errata cache for a given organization.
      *
      * @param orgIn organization
      */
-    public static void publishUpdateErrataCacheEvent(Org orgIn) {
+    private static void publishUpdateErrataCacheEvent(Org orgIn) {
         StopWatch sw = new StopWatch();
         if (log.isDebugEnabled()) {
             log.debug("Updating errata cache");
@@ -423,6 +554,7 @@ public class LoginHelper {
      */
     public static User loginUser(String username, String password, List<String> errors) {
         User user = null;
+
         try {
             user = UserManager.loginUser(username, password);
         }

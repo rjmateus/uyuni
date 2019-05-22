@@ -23,9 +23,7 @@ import com.redhat.rhn.common.conf.Config;
 import com.redhat.rhn.common.conf.ConfigDefaults;
 import com.redhat.rhn.common.conf.sso.SSOConfig;
 import com.redhat.rhn.domain.user.User;
-import com.redhat.rhn.frontend.action.LoginAction;
 import com.redhat.rhn.frontend.action.LoginHelper;
-import com.redhat.rhn.frontend.servlets.PxtSessionDelegateFactory;
 import com.redhat.rhn.manager.acl.AclManager;
 import com.redhat.rhn.manager.user.UserManager;
 import com.suse.utils.Json;
@@ -37,7 +35,6 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +74,7 @@ public class LoginController {
         if (ConfigDefaults.get().isSingleSignOnEnabled() && SSOConfig.getSSOSettings().isPresent()) {
             try {
                 Auth auth = new Auth(SSOConfig.getSSOSettings().get(), request.raw(), response.raw());
-                auth.login("/rhn/YourRhn.do");
+                auth.login(LoginHelper.DEFAULT_URL_BOUNCE);
             }
             catch (SettingsException | IOException e) {
                 log.error(e.getMessage());
@@ -93,7 +90,7 @@ public class LoginController {
             // Handle "url_bounce" parameters
             String urlBounce = request.queryParams("url_bounce");
             String reqMethod = request.queryParams("request_method");
-            urlBounce = LoginAction.updateUrlBounce(urlBounce, reqMethod);
+            urlBounce = LoginHelper.updateUrlBounce(urlBounce, reqMethod);
 
             // In case we are authenticated go directly to redirect target
             if (AclManager.hasAcl("user_authenticated()", request.raw(), null)) {
@@ -127,19 +124,27 @@ public class LoginController {
     public static String login(Request request, Response response) {
         List<String> errors = new ArrayList<>();
         LoginCredentials creds = GSON.fromJson(request.body(), LoginCredentials.class);
-        User user = LoginHelper.loginUser(creds.getLogin(), creds.getPassword(), errors);
+        User user = LoginHelper.checkExternalAuthentication(request.raw(), new ArrayList<>(), new ArrayList<>());
+
+        // External-auth didn't return a user - try local-auth
+        if (user == null) {
+            user = LoginHelper.loginUser(creds.getLogin(), creds.getPassword(), errors);
+            if (errors.isEmpty()) {
+                // No errors, log success
+                log.info("LOCAL AUTH SUCCESS: [" + user.getLogin() + "]");
+            }
+            else {
+                // Errors, log failure
+                log.error("LOCAL AUTH FAILURE: [" + creds.getLogin() + "]");
+            }
+        }
+        // External-auth returned a user and no errors
+        else if (errors.isEmpty()) {
+            log.info("EXTERNAL AUTH SUCCESS: [" + user.getLogin() + "]");
+        }
+
         if (errors.isEmpty()) {
-            log.info("LOCAL AUTH SUCCESS: [" + user.getLogin() + "]");
-
-            // Update the user and the session
-            user.setLastLoggedIn(new Date());
-            UserManager.storeUser(user);
-            PxtSessionDelegateFactory.getInstance().newPxtSessionDelegate().updateWebUserId(
-                    request.raw(), response.raw(), user.getId());
-
-            // Update errata cache for the logged in user's organization
-            LoginHelper.publishUpdateErrataCacheEvent(user.getOrg());
-
+            LoginHelper.successfulLogin(request.raw(), response.raw(), user);
             return json(response, new LoginResult(true, new String[0]));
         }
         else {
@@ -159,6 +164,11 @@ public class LoginController {
          * Default constructor.
          */
         public LoginCredentials() {
+        }
+
+        public LoginCredentials(String loginIn, String passwordIn) {
+            this.login = loginIn;
+            this.password = passwordIn;
         }
 
         /**

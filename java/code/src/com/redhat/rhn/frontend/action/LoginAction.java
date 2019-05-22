@@ -14,11 +14,11 @@
  */
 package com.redhat.rhn.frontend.action;
 
-import javax.security.auth.login.LoginException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import com.redhat.rhn.domain.user.User;
+import com.redhat.rhn.frontend.struts.RhnAction;
+import com.redhat.rhn.frontend.struts.RhnValidationHelper;
+import com.redhat.rhn.manager.user.UserManager;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -28,10 +28,9 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.action.DynaActionForm;
 
-import com.redhat.rhn.domain.user.User;
-import com.redhat.rhn.frontend.struts.RhnAction;
-import com.redhat.rhn.frontend.struts.RhnValidationHelper;
-import com.redhat.rhn.manager.user.UserManager;
+import javax.security.auth.login.LoginException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * LoginAction
@@ -39,7 +38,6 @@ import com.redhat.rhn.manager.user.UserManager;
 public class LoginAction extends RhnAction {
 
     private static Logger log = Logger.getLogger(LoginAction.class);
-    public static final String DEFAULT_URL_BOUNCE = "/rhn/YourRhn.do";
 
     /** {@inheritDoc} */
     @Override
@@ -94,29 +92,6 @@ public class LoginAction extends RhnAction {
         return ret;
     }
 
-    /**
-     * update url_bounce
-     * @param urlBounce url_bounce
-     * @param requestMethod request method
-     * @return updated url_bounce
-     */
-    public static String updateUrlBounce(String urlBounce, String requestMethod) {
-        if (StringUtils.isBlank(urlBounce)) {
-            urlBounce = DEFAULT_URL_BOUNCE;
-        }
-        else {
-            String urlBounceTrimmed = urlBounce.trim();
-            if (urlBounceTrimmed.equals("/rhn/") ||
-                    urlBounceTrimmed.endsWith("Logout.do") ||
-                    !urlBounceTrimmed.startsWith("/")) {
-                urlBounce = DEFAULT_URL_BOUNCE;
-            }
-        }
-        if (requestMethod != null && requestMethod.equals("POST")) {
-            urlBounce = DEFAULT_URL_BOUNCE;
-        }
-        return urlBounce;
-    }
 
     /**
      * Log a user into the site and create the user's session.

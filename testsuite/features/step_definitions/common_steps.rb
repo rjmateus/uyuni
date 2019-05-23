@@ -936,3 +936,8 @@ And(/^I check for failed events on history event page$/) do
   count_failures = failings.length
   raise "\nFailures in event history found:\n\n#{failings}" if count_failures.nonzero?
 end
+
+And(/I should see a list item with text "([^"]*)" and bullet with class "([^"]*)"/) do |text, className|
+   item_xpath = "//ul/li[text()='#{text}']/i[contains(@class, '#{className}')]"
+   find(:xpath, item_xpath)
+end

@@ -101,6 +101,7 @@ public class LoginController {
             Map<String, Object> model = new HashMap<>();
             model.put("url_bounce", urlBounce);
             model.put("isUyuni", ConfigDefaults.get().isUyuni());
+            model.put("title", Config.get().getString(ConfigDefaults.PRODUCT_NAME) + " - Sign In");
             model.put("request_method", reqMethod);
             model.put("validationErrors", Json.GSON.toJson(LoginHelper.validateDBVersion()));
             model.put("schemaUpgradeRequired", Json.GSON.toJson(LoginHelper.isSchemaUpgradeRequired()));

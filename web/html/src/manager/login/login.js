@@ -6,7 +6,7 @@ import { hot } from 'react-hot-loader';
 import { useInputValue } from 'components/hooks/forms/useInputValue';
 import { Messages } from '../../components/messages';
 import { AsyncButton } from '../../components/buttons';
-import useLoginApi from '../../shared/core/api/use-login-api';
+import useLoginApi from './use-login-api';
 import styles from './login.css';
 
 import LoginHeader from './login-header';
@@ -80,6 +80,7 @@ const Login = (props: Props) => {
   const loginInputRef = useRef();
 
   useEffect(() => {
+    // $FlowFixMe  // upgrade flow
     loginInputRef.current.focus();
   }, []);
 
@@ -116,7 +117,9 @@ const Login = (props: Props) => {
                 <div className="col-sm-5 col-sm-offset-1">
                   <Messages items={getFormMessages(success, messages)} />
                   <h2 className="Raleway-font gray-text">{t('Sign In')}</h2>
-                  <form name="loginForm">
+                  <form
+                    onSubmit={(event) => event.preventDefault()}
+                    name="loginForm">
                     <div className="margins-updown">
                       <input
                         id="username-field"
@@ -140,8 +143,9 @@ const Login = (props: Props) => {
                         className="btn-block"
                         defaultType="btn-success"
                         text={t('Sign In')}
-                        action={() => onLogin({ login: loginInput.value, password: passwordInput.value })
-                          .then(success => success && window.location.replace(props.bounce))
+                        action={() =>
+                          onLogin({login: loginInput.value, password: passwordInput.value})
+                            .then(success => success && window.location.replace(props.bounce))
                         }
                       />
                     </div>

@@ -2,7 +2,7 @@
 
 // $FlowFixMe  // upgrade flow
 import { useState, useEffect } from 'react';
-import Network from '../../../utils/network';
+import Network from '../../utils/network';
 
 const errorsMessage = {
   'error.invalid_login': 'Either the password or username is incorrect.',

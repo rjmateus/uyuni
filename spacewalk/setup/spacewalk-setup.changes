@@ -1,3 +1,4 @@
+- prevent CherryPy timeouts (bsc#1118175)
 - Add support for salt formulas for standalone salt
 
 -------------------------------------------------------------------

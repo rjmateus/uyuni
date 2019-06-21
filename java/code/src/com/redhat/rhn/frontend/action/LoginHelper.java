@@ -44,9 +44,6 @@ import com.redhat.rhn.manager.user.UserManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -56,11 +53,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import javax.security.auth.login.LoginException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 
 /**
  * LoginHelper
@@ -88,113 +83,8 @@ public class LoginHelper {
      * @return user, if externally authenticated
      */
     public static User checkExternalAuthentication(HttpServletRequest request,
-                                                   List<String> messages,
-                                                   List<String> errors) {
-        String remoteUserString = request.getRemoteUser();
-        User remoteUser = null;
-        if (remoteUserString != null) {
-            String firstname = decodeFromIso88591(
-                    (String) request.getAttribute("REMOTE_USER_FIRSTNAME"), "");
-            String lastname = decodeFromIso88591(
-                    (String) request.getAttribute("REMOTE_USER_LASTNAME"), "");
-            String email = decodeFromIso88591(
-                    (String) request.getAttribute("REMOTE_USER_EMAIL"), null);
-
-            Set<String> extGroups = getExtGroups(request);
-            Set<Role> roles = getRolesFromExtGroups(extGroups);
-
-            try {
-                remoteUser = UserFactory.lookupByLogin(remoteUserString);
-
-                if (remoteUser.isDisabled()) {
-                    errors.add("Account " + remoteUser.getLogin() + " has been deactivated.");
-                    remoteUser = null;
-                }
-                if (remoteUser != null) {
-                    UpdateUserCommand updateCmd = new UpdateUserCommand(remoteUser);
-                    if (!StringUtils.isEmpty(firstname)) {
-                        updateCmd.setFirstNames(firstname);
-                    }
-                    if (!StringUtils.isEmpty(lastname)) {
-                        updateCmd.setLastName(lastname);
-                    }
-                    if (!StringUtils.isEmpty(email)) {
-                        updateCmd.setEmail(email);
-                    }
-                    updateCmd.setTemporaryRoles(roles);
-                    updateCmd.updateUser();
-                    log.warn("Externally authenticated login " + remoteUserString +
-                            " (" + firstname + " " + lastname + ")");
-                }
-            }
-            catch (LookupException le) {
-                Org newUserOrg = null;
-                Boolean useOrgUnit = SatConfigFactory.getSatConfigBooleanValue(
-                        SatConfigFactory.EXT_AUTH_USE_ORGUNIT);
-                if (useOrgUnit) {
-                    String orgUnitString =
-                            (String) request.getAttribute("REMOTE_USER_ORGUNIT");
-                    newUserOrg = OrgFactory.lookupByName(orgUnitString);
-                    if (newUserOrg == null) {
-                        log.error("Cannot find organization with name: " + orgUnitString);
-                    }
-                }
-                if (newUserOrg == null) {
-                    Long defaultOrgId = SatConfigFactory.getSatConfigLongValue(
-                            SatConfigFactory.EXT_AUTH_DEFAULT_ORGID);
-                    if (defaultOrgId != null) {
-                        newUserOrg = OrgFactory.lookupById(defaultOrgId);
-                        if (newUserOrg == null) {
-                            log.error("Cannot find organization with id: " + defaultOrgId);
-                        }
-                    }
-                }
-                if (newUserOrg != null) {
-                    Set<ServerGroup> sgs = getSgsFromExtGroups(extGroups, newUserOrg);
-                    try {
-                        CreateUserCommand createCmd = new CreateUserCommand();
-                        createCmd.setLogin(remoteUserString);
-                        // set a password, that cannot really be used
-                        createCmd.setRawPassword(DEFAULT_KERB_USER_PASSWORD);
-                        createCmd.setFirstNames(firstname);
-                        createCmd.setLastName(lastname);
-                        createCmd.setEmail(email);
-                        createCmd.setOrg(newUserOrg);
-                        createCmd.setTemporaryRoles(roles);
-                        createCmd.setServerGroups(sgs);
-                        createCmd.validate();
-                        createCmd.storeNewUser();
-                        remoteUser = createCmd.getUser();
-                        log.warn("Externally authenticated login " + remoteUserString +
-                                " (" + firstname + " " + lastname + ") created in " +
-                                newUserOrg.getName() + ".");
-                    }
-                    catch (WrappedSQLException wse) {
-                        log.error("Creation of user failed with: " + wse.getMessage());
-                        HibernateFactory.rollbackTransaction();
-                    }
-                }
-                if (remoteUser != null &&
-                        remoteUser.getPassword().equals(DEFAULT_KERB_USER_PASSWORD)) {
-                    messages.add("You've logged as externally authenticated " + remoteUser.getLogin() + "user. To be " +
-                            "able to login using this account with login and password, please set your password on " +
-                            "the user details page.");
-                }
-            }
-        }
-        return remoteUser;
-    }
-
-    /**
-     * check whether we can login an externally authenticated user
-     * @param request request
-     * @param messages messages
-     * @param errors errors
-     * @return user, if externally authenticated
-     */
-    public static User checkExternalAuthentication(HttpServletRequest request,
-            ActionMessages messages,
-            ActionErrors errors) {
+            List<String> messages,
+            List<String> errors) {
         String remoteUserString = request.getRemoteUser();
         User remoteUser = null;
         if (remoteUserString != null) {
@@ -213,9 +103,7 @@ public class LoginHelper {
                     remoteUser = UserFactory.lookupByLogin(remoteUserString);
 
                 if (remoteUser.isDisabled()) {
-                    errors.add(ActionMessages.GLOBAL_MESSAGE,
-                            new ActionMessage("account.user.disabled",
-                                    new String[] {remoteUserString}));
+                    errors.add("Account " + remoteUserString + " has been deactivated");
                     remoteUser = null;
                 }
                 if (remoteUser != null) {
@@ -284,9 +172,9 @@ public class LoginHelper {
                 }
                 if (remoteUser != null &&
                         remoteUser.getPassword().equals(DEFAULT_KERB_USER_PASSWORD)) {
-                    messages.add(ActionMessages.GLOBAL_MESSAGE,
-                            new ActionMessage("message.kerbuserlogged",
-                                    new String[] {remoteUserString}));
+                    messages.add("You have logged in as an externally authenticated user. " +
+                            "To be able to login using this account with login and password " +
+                            "set your username and password in the user details page.");
                 }
             }
         }

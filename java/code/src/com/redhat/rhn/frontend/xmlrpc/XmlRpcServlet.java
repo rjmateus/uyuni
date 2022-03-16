@@ -15,6 +15,8 @@
 
 package com.redhat.rhn.frontend.xmlrpc;
 
+import com.redhat.rhn.domain.auth.WebEndpoint;
+import com.redhat.rhn.domain.auth.WebEndpointFactory;
 import com.redhat.rhn.frontend.xmlrpc.serializer.BigDecimalSerializer;
 import com.redhat.rhn.frontend.xmlrpc.serializer.ObjectSerializer;
 import com.redhat.rhn.frontend.xmlrpc.serializer.SerializerFactory;
@@ -23,6 +25,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -79,14 +86,58 @@ public class XmlRpcServlet extends HttpServlet {
     @Override
     public void init() {
         server = new RhnXmlRpcServer();
+        log.error("##### init");
 
         registerInvocationHandlers(server);
         registerCustomSerializers(server);
+        try {
+            populateEndpointAuth();
+        }
+        catch (Exception e) {
+            log.error("error loading XML_RPC API endpoints for authorization", e);
+        }
 
         // enhancement: if we ever need more than one InvocationProcessor
         // we should use the ManifestFactory like we did above for the
         // handlers.
         server.addInvocationInterceptor(new XmlRpcLoggingInvocationProcessor());
+    }
+
+    private void populateEndpointAuth() {
+        log.error("populate Endpoint Auth");
+        if (handlers != null) {
+            Set<WebEndpoint> newEndpoints = new HashSet<>();
+            for (String namespace : handlers.getKeys()) {
+                BaseHandler handler = handlers.getHandler(namespace).get();
+                Method[] methods = new Method[]{};
+                Class clazz = handler.getClass();
+                try {
+                    methods = clazz.getDeclaredMethods();
+                }
+                catch (SecurityException e) {
+                    // This should _never_ happen, because the Handler classes must
+                    // have public classes if they're expected to work.method.getDeclaringClass().equals(clazz)
+                    log.warn("no public methods in class " + clazz.getName());
+                }
+                for (Method method: methods) {
+                    if (method.getModifiers() == Modifier.PUBLIC) {
+                        String endpoint = clazz.getSimpleName() + "." + method.getName();
+                        newEndpoints.add(new WebEndpoint(namespace,
+                                clazz.getSimpleName(), endpoint, WebEndpoint.Scope.A));
+                    }
+                }
+            }
+            List<WebEndpoint> existingEndpoints = WebEndpointFactory.lookupAll();
+
+            newEndpoints.stream()
+                    .filter(e -> !existingEndpoints.contains(e))
+                    .forEach(WebEndpointFactory::saveWebEndpoint);
+
+            existingEndpoints.stream()
+                    .filter(e -> !newEndpoints.contains(e))
+                    .forEach(WebEndpointFactory::deleteWebEndpoint);
+            WebEndpointFactory.commitTransaction();
+        }
     }
 
     private void registerCustomSerializers(RhnXmlRpcServer srvr) {

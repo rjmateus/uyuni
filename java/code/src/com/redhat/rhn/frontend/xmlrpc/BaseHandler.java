@@ -25,6 +25,8 @@ import com.redhat.rhn.common.translation.TranslationException;
 import com.redhat.rhn.common.translation.Translator;
 import com.redhat.rhn.common.util.MethodUtil;
 import com.redhat.rhn.common.util.StringUtil;
+import com.redhat.rhn.domain.auth.WebEndpoint;
+import com.redhat.rhn.domain.auth.WebEndpointFactory;
 import com.redhat.rhn.domain.entitlement.Entitlement;
 import com.redhat.rhn.domain.org.Org;
 import com.redhat.rhn.domain.org.OrgFactory;
@@ -58,6 +60,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -111,6 +114,23 @@ public class BaseHandler implements XmlRpcInvocationHandler {
                 session = SessionManager.loadSession((String)params.get(0));
                 user = getLoggedInUser((String) params.get(0));
                 params.set(0, user);
+
+                if (((User)params.get(0)).isReadOnly()) {
+                    if (!beanifiedMethod.matches(RO_REGEX) && !getReadonlyMethodNames()
+                            .stream().anyMatch(m -> m.equals(beanifiedMethod))) {
+                        throw new SecurityException("The " + beanifiedMethod +
+                                " API is not available to read-only API users");
+                    }
+                }
+                if (!user.hasRole(RoleFactory.SAT_ADMIN)) {
+                    Optional<WebEndpoint> endpoinOpts = WebEndpointFactory.lookupByUserIdEndpointScope(user.getId(),
+                            myClass.getSimpleName() + "." + beanifiedMethod,
+                            WebEndpoint.Scope.A);
+                    if (endpoinOpts.isEmpty()) {
+                        throw new SecurityException("The " + beanifiedMethod +
+                                " API is not available to user " + user.getLogin());
+                    }
+                }
             }
         }
 

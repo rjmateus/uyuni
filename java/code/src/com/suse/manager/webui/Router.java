@@ -19,6 +19,7 @@ import static com.suse.manager.webui.utils.SparkApplicationHelper.isJson;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.message;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.setup;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.setupHibernateSessionFilter;
+import static spark.Spark.before;
 import static spark.Spark.exception;
 import static spark.Spark.get;
 import static spark.Spark.notFound;
@@ -86,6 +87,7 @@ import com.suse.manager.webui.services.iface.SystemQuery;
 import com.suse.manager.webui.services.iface.VirtManager;
 
 import org.apache.http.HttpStatus;
+import org.apache.log4j.Logger;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -99,6 +101,7 @@ import spark.template.jade.JadeTemplateEngine;
  * Router class defining the web UI routes.
  */
 public class Router implements SparkApplication {
+    private static Logger log = Logger.getLogger(Router.class);
 
     /**
      * Invoked from the SparkFilter. Add routes here.
@@ -108,6 +111,16 @@ public class Router implements SparkApplication {
     public void init() {
         JadeTemplateEngine jade = setup();
         setupHibernateSessionFilter();
+        before((request, response) -> {
+            // log message
+            log.error("route called");
+            //ServletRoutes.get();
+            //ServletRoutes.get().find(HttpMethod.get, "/manager/admin/setup/payg/2", "text/html");
+            //RouteMatch route = ServletRoutes.get().find(HttpMethod.get(request.requestMethod().toLowerCase()), request.uri(), "text/html");
+            //Log.error(route.getMatchUri());
+            //routeMatcher().find(context.httpMethod(), context.uri(), context.acceptType());
+            //new com.redhat.rhn.frontend.struts.RequestContext(request.raw()).getCurrentUser();
+        });
 
         initNotFoundRoutes(jade);
 

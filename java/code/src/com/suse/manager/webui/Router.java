@@ -74,6 +74,7 @@ import com.suse.manager.webui.controllers.login.LoginController;
 import com.suse.manager.webui.controllers.maintenance.MaintenanceCalendarController;
 import com.suse.manager.webui.controllers.maintenance.MaintenanceController;
 import com.suse.manager.webui.controllers.maintenance.MaintenanceScheduleController;
+import com.suse.manager.webui.controllers.reports.ReportsController;
 import com.suse.manager.webui.controllers.virtualization.VirtualGuestsController;
 import com.suse.manager.webui.controllers.virtualization.VirtualNetsController;
 import com.suse.manager.webui.controllers.virtualization.VirtualPoolsController;
@@ -132,6 +133,7 @@ public class Router implements SparkApplication {
         HttpApiRegistry httpApiRegistry = new HttpApiRegistry();
         FrontendLogController frontendLogController = new FrontendLogController();
         DownloadController downloadController = new DownloadController(paygManager);
+        ReportsController repostsController = new ReportsController();
 
         // Login
         LoginController.initRoutes(jade);
@@ -172,6 +174,9 @@ public class Router implements SparkApplication {
 
         // Proxy
         proxyController.initRoutes(proxyController, jade);
+
+        //reports controller
+        repostsController.initRoutes(jade);
 
         //CSV API
         CSVDownloadController.initRoutes();

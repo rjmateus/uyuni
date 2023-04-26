@@ -35,7 +35,7 @@ import Highstate from "./state";
 import Systems from "./systems";
 import Virtualization from "./virtualization";
 import Visualization from "./visualization";
-import Report from "./report";
+import Report from "./reporting";
 
 const pages = {
   ...Admin,
@@ -54,7 +54,7 @@ const pages = {
   ...Organizations,
   ...Packages,
   ...Proxy,
-  ...Report,
+  ...Reporting,
   ...Salt,
   ...ScheduleOptions,
   ...Shared,

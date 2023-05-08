@@ -35,7 +35,7 @@ import Highstate from "./state";
 import Storybook from "./storybook";
 import Systems from "./systems";
 import ActivationKeys from "./systems/activation-key";
-import Report from "./reporting";
+import Reporting from "./reporting";
 
 const pages = {
   ...ActivationKeys,

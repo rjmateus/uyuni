@@ -1713,6 +1713,9 @@ public class ChannelManager extends BaseManager {
         // Get all the possible base-channels owned by this Org
         channelDtos.addAll(listCustomBaseChannelsForServer(s));
 
+        // FIXME supper hacky option to add the channels needed
+        channelDtos.add(new EssentialChannelDto(ChannelFactory.lookupByLabel("el9-pool-x86_64")));
+
         for (DistChannelMap dcm : ChannelFactory.listCompatibleDcmByServerInNullOrg(s)) {
             channelDtos.add(new EssentialChannelDto(dcm.getChannel()));
         }

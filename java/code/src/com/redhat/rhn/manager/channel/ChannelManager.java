@@ -1715,6 +1715,7 @@ public class ChannelManager extends BaseManager {
 
         // FIXME supper hacky option to add the channels needed
         channelDtos.add(new EssentialChannelDto(ChannelFactory.lookupByLabel("el9-pool-x86_64")));
+        channelDtos.add(new EssentialChannelDto(ChannelFactory.lookupByLabel("rhel-x86_64-server-7")));
 
         for (DistChannelMap dcm : ChannelFactory.listCompatibleDcmByServerInNullOrg(s)) {
             channelDtos.add(new EssentialChannelDto(dcm.getChannel()));

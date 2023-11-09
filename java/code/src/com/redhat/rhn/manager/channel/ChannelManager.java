@@ -1710,6 +1710,8 @@ public class ChannelManager extends BaseManager {
 
         listPossibleSuseBaseChannelsForServer(s).ifPresent(channelDtos::addAll);
 
+        listPossibleLiberateChannels(s).ifPresent(channelDtos::addAll);
+
         // Get all the possible base-channels owned by this Org
         channelDtos.addAll(listCustomBaseChannelsForServer(s));
 
@@ -1722,6 +1724,50 @@ public class ChannelManager extends BaseManager {
         }
 
         return channelDtos;
+    }
+
+    private static final List<String> PRODUCTS_TO_LIBERATE = new ArrayList<>();
+    static {
+        PRODUCTS_TO_LIBERATE.add("almalinux");
+        PRODUCTS_TO_LIBERATE.add("rockylinux");
+        PRODUCTS_TO_LIBERATE.add("oraclelinux");
+        PRODUCTS_TO_LIBERATE.add("centos");
+    }
+
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
+    public static Optional<DataResult<EssentialChannelDto>> listPossibleLiberateChannels(Server s) {
+        log.debug("listPossibleLiberateChannel called");
+
+        Optional<SUSEProduct> baseProductId = s.getInstalledProductSet().flatMap(
+                ps -> ofNullable(ps.getBaseProduct()));
+
+        return Opt.fold(baseProductId,
+                () -> {
+                    log.info("Server has no base product installed");
+                    return empty();
+                },
+                bp -> {
+                    if (PRODUCTS_TO_LIBERATE.contains(bp.getName())) {
+                        String name = "rhel-base";
+                        if (Integer.parseInt(bp.getVersion()) >= 9) {
+                            name = "el-base";
+                        }
+                        SUSEProduct liberateProduct = SUSEProductFactory.findSUSEProduct(name,
+                                bp.getVersion(), bp.getRelease(),
+                                bp.getArch().getLabel(), true);
+
+                        if (liberateProduct != null) {
+                            Map params = new HashMap();
+                            params.put("pid", liberateProduct.getId());
+                            params.put("channel_arch_id", s.getServerArch().getCompatibleChannelArch().getId());
+                            SelectMode m3 = ModeFactory.getMode("Channel_queries",
+                                    "suse_base_channels_for_suse_product");
+                            DataResult ret  = makeDataResult(params, new HashMap(), null, m3);
+                            return of(ret);
+                        }
+                    }
+                    return empty();
+                });
     }
 
     /**

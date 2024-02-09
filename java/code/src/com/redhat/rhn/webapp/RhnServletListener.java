@@ -134,8 +134,8 @@ public class RhnServletListener implements ServletContextListener {
         // the following is not safe to run in the testsuite
         // and will be excluded from test runs
         if (sce != null) {
-            saltReactor.start();
-            logStart("Salt reactor");
+            //saltReactor.start();
+            //logStart("Salt reactor");
         }
 
         log.debug("Starting upgrade check");

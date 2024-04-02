@@ -26,6 +26,12 @@ import static spark.Spark.notFound;
 
 import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.common.hibernate.HibernateFactory;
+import com.redhat.rhn.common.security.PermissionException;
+import com.redhat.rhn.domain.auth.WebEndpoint;
+import com.redhat.rhn.domain.auth.WebEndpointFactory;
+import com.redhat.rhn.domain.role.RoleFactory;
+import com.redhat.rhn.domain.user.User;
+import com.redhat.rhn.frontend.struts.RequestContext;
 import com.redhat.rhn.manager.system.ServerGroupManager;
 import com.redhat.rhn.manager.system.SystemManager;
 import com.redhat.rhn.taskomatic.TaskomaticApi;
@@ -87,13 +93,20 @@ import com.suse.manager.webui.services.iface.SystemQuery;
 import com.suse.manager.webui.services.iface.VirtManager;
 
 import org.apache.http.HttpStatus;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 import spark.ModelAndView;
+import spark.route.HttpMethod;
+import spark.route.ServletRoutes;
+import spark.routematch.RouteMatch;
 import spark.servlet.SparkApplication;
 import spark.template.jade.JadeTemplateEngine;
 
@@ -101,7 +114,13 @@ import spark.template.jade.JadeTemplateEngine;
  * Router class defining the web UI routes.
  */
 public class Router implements SparkApplication {
-    private static Logger log = Logger.getLogger(Router.class);
+    private static Logger log = LogManager.getLogger(Router.class);
+
+    protected static final Set<String> noAuthMethods = new HashSet<String>();
+    static {
+        noAuthMethods.add("/manager/login");
+        noAuthMethods.add("/manager/api/login");
+    }
 
     /**
      * Invoked from the SparkFilter. Add routes here.
@@ -116,10 +135,32 @@ public class Router implements SparkApplication {
             log.error("route called");
             //ServletRoutes.get();
             //ServletRoutes.get().find(HttpMethod.get, "/manager/admin/setup/payg/2", "text/html");
-            //RouteMatch route = ServletRoutes.get().find(HttpMethod.get(request.requestMethod().toLowerCase()), request.uri(), "text/html");
+            RouteMatch route = ServletRoutes.get().find(
+                    HttpMethod.get(request.requestMethod().toLowerCase()),
+                    request.uri(), request.contentType());
+            if (route == null)  {
+                throw new PermissionException("Route not found to verify authorization for: " + request.uri());
+            }
+
             //Log.error(route.getMatchUri());
-            //routeMatcher().find(context.httpMethod(), context.uri(), context.acceptType());
-            //new com.redhat.rhn.frontend.struts.RequestContext(request.raw()).getCurrentUser();
+            //ServletRoutes.get().find(context.httpMethod(), context.uri(), context.acceptType());
+            User user = new RequestContext(request.raw()).getCurrentUser();
+            if (user == null ) {
+                if (!noAuthMethods.contains(route.getMatchUri())){
+                    throw new PermissionException("The " + route.getRequestURI() +
+                            " is not available for unauthenticated users.");
+                }
+            } else {
+                if (!user.hasRole(RoleFactory.SAT_ADMIN)) {
+                    Optional<WebEndpoint> endpoinOpts = WebEndpointFactory.lookupByUserIdEndpointScope(user.getId(),
+                            route.getMatchUri(),
+                            WebEndpoint.Scope.W);
+                    if (endpoinOpts.isEmpty()) {
+                        throw new PermissionException("The " + route.getRequestURI() +
+                                " API is not available to user " + user.getLogin());
+                    }
+                }
+            }
         });
 
         initNotFoundRoutes(jade);

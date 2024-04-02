@@ -86,7 +86,7 @@ public class XmlRpcServlet extends HttpServlet {
     @Override
     public void init() {
         server = new RhnXmlRpcServer();
-        log.error("##### init");
+        LOG.error("##### init");
 
         registerInvocationHandlers(server);
         registerCustomSerializers(server);
@@ -94,7 +94,7 @@ public class XmlRpcServlet extends HttpServlet {
             populateEndpointAuth();
         }
         catch (Exception e) {
-            log.error("error loading XML_RPC API endpoints for authorization", e);
+            LOG.error("error loading XML_RPC API endpoints for authorization", e);
         }
 
         // enhancement: if we ever need more than one InvocationProcessor
@@ -104,11 +104,11 @@ public class XmlRpcServlet extends HttpServlet {
     }
 
     private void populateEndpointAuth() {
-        log.error("populate Endpoint Auth");
-        if (handlers != null) {
+        LOG.error("populate Endpoint Auth");
+        if (handlerFactory != null) {
             Set<WebEndpoint> newEndpoints = new HashSet<>();
-            for (String namespace : handlers.getKeys()) {
-                BaseHandler handler = handlers.getHandler(namespace).get();
+            for (String namespace : handlerFactory.getKeys()) {
+                BaseHandler handler = handlerFactory.getHandler(namespace).get();
                 Method[] methods = new Method[]{};
                 Class clazz = handler.getClass();
                 try {
@@ -117,7 +117,7 @@ public class XmlRpcServlet extends HttpServlet {
                 catch (SecurityException e) {
                     // This should _never_ happen, because the Handler classes must
                     // have public classes if they're expected to work.method.getDeclaringClass().equals(clazz)
-                    log.warn("no public methods in class " + clazz.getName());
+                    LOG.warn("no public methods in class " + clazz.getName());
                 }
                 for (Method method: methods) {
                     if (method.getModifiers() == Modifier.PUBLIC) {

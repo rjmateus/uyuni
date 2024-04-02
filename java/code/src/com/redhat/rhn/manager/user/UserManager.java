@@ -691,13 +691,13 @@ public class UserManager extends BaseManager {
 
         LocalizationService ls = LocalizationService.getInstance();
 
-//        if (!user.hasRole(RoleFactory.ORG_ADMIN)) {
-//            //Throw an exception with a nice error message so the user
-//            //knows what went wrong.
-//            throw new PermissionException("Lookup user requires Org Admin",
-//                    ls.getMessage("permission.jsp.title.lookupuser"),
-//                    ls.getMessage("permission.jsp.summary.lookupuser"));
-//        }
+        if (!user.hasRole(RoleFactory.ORG_ADMIN)) {
+            //Throw an exception with a nice error message so the user
+            //knows what went wrong.
+            throw new PermissionException("Lookup user requires Org Admin",
+                    ls.getMessage("permission.jsp.title.lookupuser"),
+                    ls.getMessage("permission.jsp.summary.lookupuser"));
+        }
 
         returnedUser = UserFactory.lookupByLogin(user, login);
         return returnedUser;
@@ -709,9 +709,9 @@ public class UserManager extends BaseManager {
      * @return A list of users.
      */
     public static List<User> usersInOrg(User user) {
-//        if (!user.hasRole(RoleFactory.ORG_ADMIN)) {
-//            throw getNoAdminError();
-//        }
+        if (!user.hasRole(RoleFactory.ORG_ADMIN)) {
+            throw getNoAdminError();
+        }
         return UserFactory.getInstance().findAllUsers(of(user.getOrg()));
     }
 

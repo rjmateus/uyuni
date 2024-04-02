@@ -42,7 +42,7 @@ CREATE TABLE suseUserGroup
     description      VARCHAR(1024) NOT NULL,
 
     system_group          CHAR(1) DEFAULT ('N') NOT NULL,
-    org_id           NUMERIC NOT NULL
+    org_id           NUMERIC
                          CONSTRAINT rhn_user_group_org_fk
                              REFERENCES web_customer (id)
                              ON DELETE CASCADE,
@@ -71,5 +71,24 @@ insert into suseUserWebEndpoint values (2,(select id from suseWebEndpoint where 
 insert into suseUserWebEndpoint values (2,(select id from suseWebEndpoint where endpoint ='UserHandler.listRoles' ));
 
 
+insert into suseUserWebEndpoint values (2,(select id from suseWebEndpoint where endpoint ='SystemHandler.createSystemProfile' ));
+
 insert into suseUserWebEndpoint (user_id, web_endpoint_id)
 select 2, id from suseWebEndpoint where namespace = 'user';
+
+-------------
+insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'ui_payg', 'AdminViewsController', '/manager/admin/setup/payg', 'W');
+insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'ui_payg', 'AdminViewsController', '/manager/admin/setup/payg/:id', 'W');
+
+insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'systems_list', 'AdminViewsController', '/manager/systems/list/all', 'W');
+insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'systems_list', 'AdminViewsController', '/manager/api/systems/list/all', 'W');
+insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'systems_list', 'AdminViewsController', '/manager/api/sets/:label', 'W');
+insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'systems_list', 'AdminViewsController', '/manager/api/sets/:label/clear', 'W');
+
+insert into suseUserWebEndpoint values (2,(select id from suseWebEndpoint where endpoint ='/manager/admin/setup/payg' ));
+insert into suseUserWebEndpoint values (2,(select id from suseWebEndpoint where endpoint ='/manager/admin/setup/payg/:id' ));
+
+
+insert into suseUserWebEndpoint (
+select 2, id from suseWebEndpoint where namespace = 'systems_list' and scope = 'W');
+

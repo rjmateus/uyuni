@@ -17,7 +17,8 @@ package com.redhat.rhn.domain.auth;
 
 import com.redhat.rhn.common.hibernate.HibernateFactory;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hibernate.query.NativeQuery;
 
 import java.util.LinkedList;
@@ -30,7 +31,7 @@ import javax.persistence.criteria.Root;
 
 public class WebEndpointFactory extends HibernateFactory {
 
-    private static Logger log = Logger.getLogger(WebEndpointFactory.class);
+    private static Logger log = LogManager.getLogger(WebEndpointFactory.class);
     private static final WebEndpointFactory SINGLETON = new WebEndpointFactory();
 
     private WebEndpointFactory() {

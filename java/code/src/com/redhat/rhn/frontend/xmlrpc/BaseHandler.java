@@ -57,6 +57,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +80,16 @@ public class BaseHandler implements XmlRpcInvocationHandler {
     private static Logger log = LogManager.getLogger(BaseHandler.class);
 
     private static final String KEY_REGEX = "^[1-9][0-9]*x[a-f0-9]{64}$";
+
+    protected static final Set<String> noAuthMethods = new HashSet<String>();
+    static {
+        noAuthMethods.add("AuthHandler.login");
+        noAuthMethods.add("ApiHandler.getApiNamespaceCallList");
+        noAuthMethods.add("ApiHandler.getVersion");
+        noAuthMethods.add("ApiHandler.getApiCallList");
+        noAuthMethods.add("ApiHandler.systemVersion");
+        noAuthMethods.add("ApiHandler.getApiNamespaces");
+    }
 
     protected boolean providesAuthentication() {
         return false;
@@ -103,7 +114,8 @@ public class BaseHandler implements XmlRpcInvocationHandler {
                 .toArray(Method[]::new);
 
         String[] byNamespace = methodCalled.split("\\.");
-        String beanifiedMethod = StringUtil.beanify(byNamespace[byNamespace.length - 1]);
+        String namespace = byNamespace[byNamespace.length - 1];
+        String beanifiedMethod = StringUtil.beanify(namespace);
         WebSession session = null;
         User user = null;
 
@@ -114,23 +126,6 @@ public class BaseHandler implements XmlRpcInvocationHandler {
                 session = SessionManager.loadSession((String)params.get(0));
                 user = getLoggedInUser((String) params.get(0));
                 params.set(0, user);
-
-                if (((User)params.get(0)).isReadOnly()) {
-                    if (!beanifiedMethod.matches(RO_REGEX) && !getReadonlyMethodNames()
-                            .stream().anyMatch(m -> m.equals(beanifiedMethod))) {
-                        throw new SecurityException("The " + beanifiedMethod +
-                                " API is not available to read-only API users");
-                    }
-                }
-                if (!user.hasRole(RoleFactory.SAT_ADMIN)) {
-                    Optional<WebEndpoint> endpoinOpts = WebEndpointFactory.lookupByUserIdEndpointScope(user.getId(),
-                            myClass.getSimpleName() + "." + beanifiedMethod,
-                            WebEndpoint.Scope.A);
-                    if (endpoinOpts.isEmpty()) {
-                        throw new SecurityException("The " + beanifiedMethod +
-                                " API is not available to user " + user.getLogin());
-                    }
-                }
             }
         }
 
@@ -151,6 +146,26 @@ public class BaseHandler implements XmlRpcInvocationHandler {
         if (user != null && user.isReadOnly()) {
             if (!foundMethod.isAnnotationPresent(ReadOnly.class)) {
                 throw new SecurityException("The " + beanifiedMethod + " API is not available to read-only API users");
+            }
+        }
+        // New user access verification
+        // it's now accessing the database but we can change it to save the allowed methods on user's session
+        String authEndpoint = myClass.getSimpleName() + "." + beanifiedMethod;
+
+        if (user == null ) {
+            if (!noAuthMethods.contains(authEndpoint)){
+                throw new SecurityException("The " + beanifiedMethod +
+                        " API is not available for unauthenticated users.");
+            }
+        } else {
+            if (!user.hasRole(RoleFactory.SAT_ADMIN)) {
+                Optional<WebEndpoint> endpoinOpts = WebEndpointFactory.lookupByUserIdEndpointScope(user.getId(),
+                        authEndpoint,
+                        WebEndpoint.Scope.A);
+                if (endpoinOpts.isEmpty()) {
+                    throw new SecurityException("The " + authEndpoint +
+                            " API is not available to user " + user.getLogin());
+                }
             }
         }
 

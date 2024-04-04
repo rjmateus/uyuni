@@ -19,19 +19,12 @@ import static com.suse.manager.webui.utils.SparkApplicationHelper.isJson;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.message;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.setup;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.setupHibernateSessionFilter;
-import static spark.Spark.before;
 import static spark.Spark.exception;
 import static spark.Spark.get;
 import static spark.Spark.notFound;
 
 import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.common.hibernate.HibernateFactory;
-import com.redhat.rhn.common.security.PermissionException;
-import com.redhat.rhn.domain.auth.WebEndpoint;
-import com.redhat.rhn.domain.auth.WebEndpointFactory;
-import com.redhat.rhn.domain.role.RoleFactory;
-import com.redhat.rhn.domain.user.User;
-import com.redhat.rhn.frontend.struts.RequestContext;
 import com.redhat.rhn.manager.system.ServerGroupManager;
 import com.redhat.rhn.manager.system.SystemManager;
 import com.redhat.rhn.taskomatic.TaskomaticApi;
@@ -100,13 +93,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 import spark.ModelAndView;
-import spark.route.HttpMethod;
-import spark.route.ServletRoutes;
-import spark.routematch.RouteMatch;
 import spark.servlet.SparkApplication;
 import spark.template.jade.JadeTemplateEngine;
 
@@ -130,7 +119,7 @@ public class Router implements SparkApplication {
     public void init() {
         JadeTemplateEngine jade = setup();
         setupHibernateSessionFilter();
-        before((request, response) -> {
+       /* before((request, response) -> {
             // log message
             log.error("route called");
             //ServletRoutes.get();
@@ -161,7 +150,7 @@ public class Router implements SparkApplication {
                     }
                 }
             }
-        });
+        });*/
 
         initNotFoundRoutes(jade);
 

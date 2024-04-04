@@ -72,6 +72,12 @@
   </filter>
 
   <filter>
+    <filter-name>AccessFilter</filter-name>
+    <filter-class>com.redhat.rhn.frontend.servlets.AccessFilter</filter-class>
+    <async-supported>true</async-supported>
+  </filter>
+
+  <filter>
     <filter-name>LocalizedEnvironmentFilter</filter-name>
     <filter-class>com.redhat.rhn.frontend.servlets.LocalizedEnvironmentFilter</filter-class>
     <async-supported>true</async-supported>
@@ -165,6 +171,16 @@
 
   <filter-mapping>
     <filter-name>AuthFilterSpark</filter-name>
+    <url-pattern>/manager/*</url-pattern>
+    <url-pattern>/saltboot/*</url-pattern>
+  </filter-mapping>
+
+  <!-- FIXME add access filter in here, and control all the pages -->
+
+  <filter-mapping>
+    <filter-name>AccessFilter</filter-name>
+    <url-pattern>*.do</url-pattern>
+    <url-pattern>*.jsp</url-pattern>
     <url-pattern>/manager/*</url-pattern>
     <url-pattern>/saltboot/*</url-pattern>
   </filter-mapping>

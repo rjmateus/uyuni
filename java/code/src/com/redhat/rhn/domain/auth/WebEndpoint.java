@@ -39,18 +39,24 @@ import javax.persistence.Table;
                 query = "select e.* from suseWebEndpoint e join suseUserWebEndpoint ue on e.id=ue.web_endpoint_id " +
                 " where ue.user_id=:user_id"
         ),
-        @NamedNativeQuery(name = "WebEndpoint_user_access",
+        @NamedNativeQuery(name = "WebEndpoint_user_access_endpoint",
                 query = "select e.* from suseWebEndpoint e join suseUserWebEndpoint ue on e.id=ue.web_endpoint_id " +
-                " where ue.user_id=:user_id and e.endpoint=:endpoint and e.scope=:scope"
+                " where ue.user_id=:user_id and e.endpoint=:endpoint and e.http_method=:http_method and e.scope=:scope"
+        ),
+        @NamedNativeQuery(name = "WebEndpoint_user_access_class_Method",
+                query = "select e.* from suseWebEndpoint e join suseUserWebEndpoint ue on e.id=ue.web_endpoint_id " +
+                        " where ue.user_id=:user_id and e.class_method=:class_method and e.scope=:scope"
         )
 })
 public class WebEndpoint extends BaseDomainHelper {
     private Long id;
 
-    private String namespace;
     private String className;
     private String endpoint;
+    private String httpMethod;
     private Scope scope;
+    private Boolean authentication;
+    private Boolean accessControl;
 
     /**
      * Status of the {@link PaygSshData}
@@ -82,16 +88,21 @@ public class WebEndpoint extends BaseDomainHelper {
 
     /**
      * full constructor
-     * @param namespaceIn
+     *
      * @param classNameIn
-     * @param methodNameIn
+     * @param endpointIn
      * @param scopeIn
+     * @param authenticationIn
+     * @param accessControlIn
      */
-    public WebEndpoint(String namespaceIn, String classNameIn, String methodNameIn, Scope scopeIn) {
-        namespace = namespaceIn;
+    public WebEndpoint(String classNameIn, String endpointIn, String httpMethodIn, Scope scopeIn,
+                       Boolean authenticationIn, Boolean accessControlIn) {
         className = classNameIn;
-        endpoint = methodNameIn;
+        endpoint = endpointIn;
+        httpMethod = httpMethodIn;
         scope = scopeIn;
+        authentication = authenticationIn;
+        accessControl = accessControlIn;
     }
 
     /**
@@ -115,17 +126,7 @@ public class WebEndpoint extends BaseDomainHelper {
         id = idIn;
     }
 
-    @Column(name = "namespace")
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public void setNamespace(String namespaceIn) {
-        this.namespace = namespaceIn;
-    }
-
-
-    @Column(name = "class_name")
+    @Column(name = "class_method")
     public String getClassName() {
         return className;
     }
@@ -155,6 +156,32 @@ public class WebEndpoint extends BaseDomainHelper {
         this.scope = scope;
     }
 
+    @Column(name = "http_method")
+    public String getHttpMethod() {
+        return httpMethod;
+    }
+
+    public void setHttpMethod(String httpMethodIn) {
+        httpMethod = httpMethodIn;
+    }
+
+    @Column(name = "authentication")
+    public Boolean getAuthentication() {
+        return authentication;
+    }
+
+    public void setAuthentication(Boolean authenticationIn) {
+        authentication = authenticationIn;
+    }
+
+    @Column(name = "access_control")
+    public Boolean getAccessControl() {
+        return accessControl;
+    }
+
+    public void setAccessControl(Boolean accessControlIn) {
+        accessControl = accessControlIn;
+    }
 
     @Override
     public boolean equals(Object oIn) {
@@ -165,14 +192,14 @@ public class WebEndpoint extends BaseDomainHelper {
             return false;
         }
         WebEndpoint that = (WebEndpoint) oIn;
-        return Objects.equals(namespace, that.namespace) &&
-                Objects.equals(className, that.className) &&
+        return Objects.equals(className, that.className) &&
                 Objects.equals(endpoint, that.endpoint) &&
+                Objects.equals(httpMethod, that.httpMethod) &&
                 scope == that.scope;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(namespace, className, endpoint, scope);
+        return Objects.hash(className, endpoint, scope, httpMethod);
     }
 }

@@ -159,7 +159,7 @@ public class BaseHandler implements XmlRpcInvocationHandler {
             }
         } else {
             if (!user.hasRole(RoleFactory.SAT_ADMIN)) {
-                Optional<WebEndpoint> endpoinOpts = WebEndpointFactory.lookupByUserIdEndpointScope(user.getId(),
+                Optional<WebEndpoint> endpoinOpts = WebEndpointFactory.lookupByUserIdClassMethodScope(user.getId(),
                         authEndpoint,
                         WebEndpoint.Scope.A);
                 if (endpoinOpts.isEmpty()) {

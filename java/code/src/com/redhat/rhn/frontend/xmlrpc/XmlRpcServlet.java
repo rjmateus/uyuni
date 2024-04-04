@@ -21,6 +21,8 @@ import com.redhat.rhn.frontend.xmlrpc.serializer.BigDecimalSerializer;
 import com.redhat.rhn.frontend.xmlrpc.serializer.ObjectSerializer;
 import com.redhat.rhn.frontend.xmlrpc.serializer.SerializerFactory;
 
+import com.suse.manager.api.ReadOnly;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -86,7 +88,6 @@ public class XmlRpcServlet extends HttpServlet {
     @Override
     public void init() {
         server = new RhnXmlRpcServer();
-        LOG.error("##### init");
 
         registerInvocationHandlers(server);
         registerCustomSerializers(server);
@@ -102,6 +103,8 @@ public class XmlRpcServlet extends HttpServlet {
         // handlers.
         server.addInvocationInterceptor(new XmlRpcLoggingInvocationProcessor());
     }
+
+    public static final String HTTP_API_ROOT = "/manager/api/";
 
     private void populateEndpointAuth() {
         LOG.error("populate Endpoint Auth");
@@ -119,11 +122,18 @@ public class XmlRpcServlet extends HttpServlet {
                     // have public classes if they're expected to work.method.getDeclaringClass().equals(clazz)
                     LOG.warn("no public methods in class " + clazz.getName());
                 }
+
+                // FIXME it's adding all the puublic methods. but this is not correct, since it implementa some filtering, the same way we are doing at the HttpApiRegistry class
                 for (Method method: methods) {
                     if (method.getModifiers() == Modifier.PUBLIC) {
-                        String endpoint = clazz.getSimpleName() + "." + method.getName();
-                        newEndpoints.add(new WebEndpoint(namespace,
-                                clazz.getSimpleName(), endpoint, WebEndpoint.Scope.A));
+                        String classImplemenmtation = clazz.getSimpleName() + "." + method.getName();
+                        String endpoint = HTTP_API_ROOT + namespace.replace('.', '/') + '/' + method.getName();
+                        String httpMethod = "POST";
+                        if (method.isAnnotationPresent(ReadOnly.class)) {
+                            httpMethod = "GET";
+                        }
+
+                        newEndpoints.add(new WebEndpoint(classImplemenmtation, endpoint, httpMethod, WebEndpoint.Scope.A, true, true));
                     }
                 }
             }

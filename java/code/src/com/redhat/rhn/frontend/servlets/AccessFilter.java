@@ -54,6 +54,7 @@ public class AccessFilter implements Filter {
         noAuthMethods.add("/manager/login");
         noAuthMethods.add("/manager/api/login");
         noAuthMethods.add("/errors/404.jsp");
+        noAuthMethods.add("/Logout.do");
     }
 
     /** {@inheritDoc} */

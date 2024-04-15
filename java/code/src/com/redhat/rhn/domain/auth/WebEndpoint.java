@@ -39,9 +39,13 @@ import javax.persistence.Table;
                 query = "select e.* from suseWebEndpoint e join suseUserWebEndpoint ue on e.id=ue.web_endpoint_id " +
                 " where ue.user_id=:user_id"
         ),
-        @NamedNativeQuery(name = "WebEndpoint_user_access_endpoint",
+        @NamedNativeQuery(name = "WebEndpoint_user_access_endpoint_scope",
                 query = "select e.* from suseWebEndpoint e join suseUserWebEndpoint ue on e.id=ue.web_endpoint_id " +
                 " where ue.user_id=:user_id and e.endpoint=:endpoint and e.http_method=:http_method and e.scope=:scope"
+        ),
+        @NamedNativeQuery(name = "WebEndpoint_user_access_endpoint",
+                query = "select e.* from suseWebEndpoint e join suseUserWebEndpoint ue on e.id=ue.web_endpoint_id " +
+                " where ue.user_id=:user_id and e.endpoint=:endpoint and e.http_method=:http_method"
         ),
         @NamedNativeQuery(name = "WebEndpoint_user_access_class_Method",
                 query = "select e.* from suseWebEndpoint e join suseUserWebEndpoint ue on e.id=ue.web_endpoint_id " +

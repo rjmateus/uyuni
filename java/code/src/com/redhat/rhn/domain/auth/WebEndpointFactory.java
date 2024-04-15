@@ -68,12 +68,21 @@ public class WebEndpointFactory extends HibernateFactory {
         query.setParameter("user_id", userId);
         return query.getResultList();
     }
+
     public static Optional<WebEndpoint> lookupByUserIdEndpointScope(Long userId, String endpoint, String httpMethod, WebEndpoint.Scope scope) {
-        NativeQuery<WebEndpoint> query = getSession().getNamedNativeQuery("WebEndpoint_user_access_endpoint");
+        NativeQuery<WebEndpoint> query = getSession().getNamedNativeQuery("WebEndpoint_user_access_endpoint_scope");
         query.setParameter("user_id", userId);
         query.setParameter("endpoint", endpoint);
         query.setParameter("http_method", httpMethod);
         query.setParameter("scope", scope.name());
+        return query.uniqueResultOptional();
+    }
+
+    public static Optional<WebEndpoint> lookupByUserIdEndpoint(Long userId, String endpoint, String httpMethod) {
+        NativeQuery<WebEndpoint> query = getSession().getNamedNativeQuery("WebEndpoint_user_access_endpoint");
+        query.setParameter("user_id", userId);
+        query.setParameter("endpoint", endpoint);
+        query.setParameter("http_method", httpMethod);
         return query.uniqueResultOptional();
     }
 

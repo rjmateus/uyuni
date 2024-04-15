@@ -30,3 +30,5 @@ select 2, id from suseWebEndpoint where class_method = 'YourRhn.do' and scope = 
 insert into suseUserWebEndpoint (
 select 2, id from suseWebEndpoint where class_method = 'systems/details/Overview.do' and scope = 'W');
 
+insert into suseUserWebEndpoint (
+select 2, id from suseWebEndpoint where class_method = 'SystemHandler.listSystems' and scope = 'A');

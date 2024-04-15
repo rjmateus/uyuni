@@ -53,6 +53,10 @@ public class AccessFilter implements Filter {
     static {
         noAuthMethods.add("/manager/login");
         noAuthMethods.add("/manager/api/login");
+        noAuthMethods.add("/manager/api/auth/login");
+        noAuthMethods.add("/manager/api/auth/logout");
+        noAuthMethods.add("/manager/api/api/getVersion");
+        noAuthMethods.add("/manager/api/api/systemVersion");
         noAuthMethods.add("/errors/404.jsp");
         noAuthMethods.add("/Logout.do");
     }
@@ -131,10 +135,9 @@ public class AccessFilter implements Filter {
             }
         } else {
             if (!user.hasRole(RoleFactory.SAT_ADMIN)) {
-                Optional<WebEndpoint> endpoinOpts = WebEndpointFactory.lookupByUserIdEndpointScope(user.getId(),
+                Optional<WebEndpoint> endpoinOpts = WebEndpointFactory.lookupByUserIdEndpoint(user.getId(),
                         route.getMatchUri(),
-                        hreq.getMethod(),
-                        WebEndpoint.Scope.W);
+                        hreq.getMethod());
                 if (endpoinOpts.isEmpty()) {
                     throw new PermissionException("The " + route.getRequestURI() +
                             " API is not available to user " + user.getLogin());

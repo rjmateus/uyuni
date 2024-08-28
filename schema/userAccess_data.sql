@@ -3,11 +3,11 @@
 insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'AdminViewsController', '/manager/admin/setup/payg', 'GET', 'W', true, true);
 insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'AdminViewsController', '/manager/admin/setup/payg/:id', 'GET', 'W', true, true);
 
-insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'AdminViewsController', '/manager/systems/list/all', 'GET', 'W', true, true);
-insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'AdminViewsController', '/manager/api/systems/list/all', 'GET', 'W', true, true);
-insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'AdminViewsController', '/manager/api/sets/:label', 'GET', 'W', true, true);
-insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'AdminViewsController', '/manager/api/sets/:label', 'POST', 'W', true, true);
-insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'AdminViewsController', '/manager/api/sets/:label/clear', 'GET', 'W', true, true);
+insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'SystemsListController', '/manager/systems/list/all', 'GET', 'W', true, true);
+insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'SystemsListController', '/manager/api/systems/list/all', 'GET', 'W', true, true);
+insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'SystemsListController', '/manager/api/sets/:label', 'GET', 'W', true, true);
+insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'SystemsListController', '/manager/api/sets/:label', 'POST', 'W', true, true);
+insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'SystemsListController', '/manager/api/sets/:label/clear', 'GET', 'W', true, true);
 
 insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'YourRhn.do', '/YourRhn.do', 'GET', 'W', true, true);
 insert into suseWebEndpoint values (sequence_nextval('suseWebEndpoint_id_seq'), 'systems/details/Overview.do', '/systems/details/Overview.do', 'GET', 'W', true, true);

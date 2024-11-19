@@ -40,6 +40,7 @@ import com.redhat.rhn.frontend.xmlrpc.PermissionCheckFailureException;
 import com.redhat.rhn.frontend.xmlrpc.UserNotUpdatedException;
 import com.redhat.rhn.manager.SatManager;
 import com.redhat.rhn.manager.system.ServerGroupManager;
+import com.redhat.rhn.manager.system.SystemManager;
 import com.redhat.rhn.manager.user.CreateUserCommand;
 import com.redhat.rhn.manager.user.DeleteSatAdminException;
 import com.redhat.rhn.manager.user.UpdateUserCommand;
@@ -51,6 +52,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -233,6 +235,38 @@ public class UserHandler extends BaseHandler {
         ret.put("errata_notification", target.getEmailNotify() == 1);
 
         return ret;
+    }
+
+    @ReadOnly
+    public List<Map<String, List<String>>> getSaltAcl(User loggedInUser) throws FaultException {
+
+        List<Map<String, List<String>>> result = new LinkedList();
+        List<String> listMinionIds = SystemManager.systemMinionIdUserAccess(loggedInUser);
+
+        for (String minionid: listMinionIds) {
+            Map<String, List<String>> permition = new HashMap();
+            permition.put(minionid, Arrays.asList(".*"));
+            result.add(permition);
+
+        }
+//
+//        return listMinionIds.stream().map(m ->{
+//            Map<String, List<String>> permition = new HashMap();
+//            permition.put(m, Arrays.asList(".*"));
+//            return permition;
+//        }).toList();
+//
+//        if (loggedInUser.getLogin().equalsIgnoreCase("admin")) {
+//            Map<String, List<String>> permition = new HashMap();
+//            permition.put("*", Arrays.asList(".*"));
+//            result.add(permition);
+//        } else {
+//            Map<String, List<String>> permition = new HashMap();
+//            permition.put("uyuni-minion.suse.lab", Arrays.asList(".*"));
+//            result.add(permition);
+//        }
+
+        return result;
     }
 
     /**

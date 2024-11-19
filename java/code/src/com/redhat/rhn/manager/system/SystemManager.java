@@ -169,6 +169,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import javax.persistence.Tuple;
+
 
 /**
  * SystemManager
@@ -982,6 +984,26 @@ public class SystemManager extends BaseManager {
         Map<String, Object> elabParams = new HashMap<>();
 
         return makeDataResult(params, elabParams, pc, m);
+    }
+
+    public static List<String> systemMinionIdUserAccess(User user) {
+        String query = """
+                select minion_id 
+                from suseminioninfo m inner join rhnUserServerPerms p 
+                    on p.server_id = m.server_id 
+                    where user_id = :uid
+                """;
+        List<Tuple> data = HibernateFactory.getSession()
+                .createNativeQuery(query, Tuple.class)
+                .setParameter("uid", user.getId())
+                .list();
+
+        List<String> result = new LinkedList<>();
+
+        for (Tuple tuple : data) {
+            result.add(tuple.get(0, String.class));
+        }
+        return result;
     }
 
     /**

@@ -249,6 +249,13 @@ public class UserHandler extends BaseHandler {
             result.add(permition);
 
         }
+
+        if (loggedInUser.hasRole(RoleFactory.SAT_ADMIN)) {
+            Map<String, List<String>> permition = new HashMap();
+            permition.put("*", Arrays.asList(".*"));
+            result.add(permition);
+        }
+
 //
 //        return listMinionIds.stream().map(m ->{
 //            Map<String, List<String>> permition = new HashMap();

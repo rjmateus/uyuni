@@ -20,6 +20,8 @@ run any execution module and all runners.
 The Uyuni call should return a JSON array that maps to a regular eauth YAML
 structure of a user as above.
 
+- copy the file to: /usr/lib/python3.6/site-packages/salt/auth
+
 """
 
 
@@ -134,12 +136,3 @@ def acl(username, **kwargs):
         return None
     else:
         return merged_acl
-
-#------------------------------------------------
-#
-# def process_acl(auth_list, opts=None):
-#     log.critical("process_acl input: %s", auth_list)
-#     merged_acl =  auth_list + [{'uyuni-minion.suse.lab': ['.*']}, {'uyuni-minion2.suse.lab': ['.*']}]
-#     log.critical("process_acl input: %s", merged_acl)
-#     return merged_acl
-

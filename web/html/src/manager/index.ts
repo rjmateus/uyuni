@@ -56,7 +56,6 @@ const pages = {
   ...Packages,
   ...Proxy,
   ...RecurringActions,
-  ...Report,
   ...Reporting,
   ...Salt,
   ...ScheduleOptions,

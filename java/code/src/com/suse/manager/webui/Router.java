@@ -80,9 +80,6 @@ import com.suse.manager.webui.controllers.maintenance.MaintenanceCalendarControl
 import com.suse.manager.webui.controllers.maintenance.MaintenanceController;
 import com.suse.manager.webui.controllers.maintenance.MaintenanceScheduleController;
 import com.suse.manager.webui.controllers.reporting.ReportsController;
-import com.suse.manager.webui.controllers.virtualization.VirtualGuestsController;
-import com.suse.manager.webui.controllers.virtualization.VirtualNetsController;
-import com.suse.manager.webui.controllers.virtualization.VirtualPoolsController;
 import com.suse.manager.webui.errors.NotFoundException;
 import com.suse.manager.webui.services.iface.SaltApi;
 import com.suse.manager.webui.services.iface.SystemQuery;

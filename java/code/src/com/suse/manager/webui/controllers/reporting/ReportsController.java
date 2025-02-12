@@ -19,7 +19,7 @@ import static com.suse.manager.webui.utils.SparkApplicationHelper.asJson;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.json;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withCsrfToken;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withDocsLocale;
-import static com.suse.manager.webui.utils.SparkApplicationHelper.withOrgReport;
+import static com.suse.manager.webui.utils.SparkApplicationHelper.withUser;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withUserPreferences;
 import static spark.Spark.get;
 
@@ -82,11 +82,11 @@ public class ReportsController {
         get("/manager/report/inventory",
                 withUserPreferences(
                         withCsrfToken(withDocsLocale(
-                                withOrgReport(this::inventoryReportPage)))), jade);
-        get("/manager/api/report/inventory", asJson(withOrgReport(this::inventoryReport)));
-        get("/manager/api/report/inventory/csv", asJson(withOrgReport(this::inventoryCSV)));
+                                withUser(this::inventoryReportPage)))), jade);
+        get("/manager/api/report/inventory", asJson(withUser(this::inventoryReport)));
+        get("/manager/api/report/inventory/csv", asJson(withUser(this::inventoryCSV)));
         get("/manager/report/cvesearch",
-                withUserPreferences(withCsrfToken(withDocsLocale(withOrgReport(this::cveSearchReportPage)))), jade);
+                withUserPreferences(withCsrfToken(withDocsLocale(withUser(this::cveSearchReportPage)))), jade);
     }
 
     private Object inventoryReport(Request request, Response response, User user) {

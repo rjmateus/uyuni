@@ -269,9 +269,9 @@ public class SparkApplicationHelper {
      * @param route the route
      * @return the route
      */
-    public static TemplateViewRoute withOrgReport(TemplateViewRouteWithUser route) {
-        return withRole(route, RoleFactory.ORG_REPORT);
-    }
+//    public static TemplateViewRoute withOrgReport(TemplateViewRouteWithUser route) {
+//        return withRole(route, RoleFactory.ORG_REPORT);
+//    }
 
 
     /**
@@ -281,9 +281,9 @@ public class SparkApplicationHelper {
      * @param route the route
      * @return the route
      */
-    public static Route withOrgReport(RouteWithUser route) {
-        return withRole(route, RoleFactory.ORG_REPORT);
-    }
+//    public static Route withOrgReport(RouteWithUser route) {
+//        return withRole(route, RoleFactory.ORG_REPORT);
+//    }
 
     /**
      * Use in routes to automatically get the current user, which must be the product

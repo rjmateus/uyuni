@@ -76,6 +76,7 @@ import com.redhat.rhn.frontend.xmlrpc.system.provisioning.powermanagement.PowerM
 import com.redhat.rhn.frontend.xmlrpc.system.provisioning.snapshot.SnapshotHandler;
 import com.redhat.rhn.frontend.xmlrpc.system.scap.SystemScapHandler;
 import com.redhat.rhn.frontend.xmlrpc.system.search.SystemSearchHandler;
+import com.redhat.rhn.frontend.xmlrpc.systemgroup.DynamicSystemGroupHandler;
 import com.redhat.rhn.frontend.xmlrpc.systemgroup.ServerGroupHandler;
 import com.redhat.rhn.frontend.xmlrpc.taskomatic.TaskomaticHandler;
 import com.redhat.rhn.frontend.xmlrpc.taskomatic.TaskomaticOrgHandler;
@@ -157,6 +158,7 @@ public class HandlerFactory {
 
         OrgHandler orgHandler = new OrgHandler(migrationManager);
         ServerGroupHandler serverGroupHandler = new ServerGroupHandler(xmlRpcSystemHelper, serverGroupManager);
+        DynamicSystemGroupHandler dynamicSystemGroupHandler = new DynamicSystemGroupHandler(serverGroupHandler, systemHandler, saltApi);
         UserHandler userHandler = new UserHandler(serverGroupManager);
         ActivationKeyHandler activationKeyHandler = new ActivationKeyHandler(serverGroupManager);
         ChannelHandler channelHandler = new ChannelHandler();
@@ -226,6 +228,7 @@ public class HandlerFactory {
         factory.addHandler("system.search", new SystemSearchHandler());
         factory.addHandler("virtualhostmanager", new VirtualHostManagerHandler());
         factory.addHandler("systemgroup", serverGroupHandler);
+        factory.addHandler("systemgroup.dynamic", dynamicSystemGroupHandler);
         factory.addHandler("taskomatic", new TaskomaticHandler());
         factory.addHandler("taskomatic.org", new TaskomaticOrgHandler());
         factory.addHandler("user", userHandler);

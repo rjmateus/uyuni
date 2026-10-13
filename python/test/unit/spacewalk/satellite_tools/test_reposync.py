@@ -353,7 +353,7 @@ class RepoSyncTest(unittest.TestCase):
             ],
         )
 
-        filters = rs._load_db_filters(42, lambda value: value.split(","))
+        filters = rs._load_db_filters(42)
 
         self.assertEqual(
             filters,
@@ -370,12 +370,10 @@ class RepoSyncTest(unittest.TestCase):
         rs = _init_reposync(self.reposync)
         _mock_rhnsql(
             self.reposync,
-            [[{"flag": "+", "filter": "pkg1 pkg2, pkg3"}]],
+            [[{"flag": "+", "filter": "pkg1,pkg2, pkg3"}]],
         )
 
-        filters = rs._load_db_filters(
-            None, lambda value: self.reposync.re.split(r"[,\s]+", value)
-        )
+        filters = rs._load_db_filters(None)
 
         self.assertEqual(filters, [("+", ["pkg1", "pkg2", "pkg3"])])
 

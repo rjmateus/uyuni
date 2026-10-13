@@ -779,6 +779,8 @@ class RepoSync(object):
 
                     if self.show_packages_only:
                         self.show_packages(plugin, data["id"])
+                        elapsed_time = datetime.now() - start_time
+                        return elapsed_time, sync_error
                     elif plugin is not None:
                         if update_repodata:
                             plugin.clear_cache()

@@ -1891,8 +1891,13 @@ class RepoSync(object):
             h.execute(source_id=source_id)
             filter_data = h.fetchall_dict() or []
             filters = [
-                (row["flag"], re.split(r"[,\s]+", row["filter"])) for row in filter_data
+                (
+                    row["flag"],
+                    [v.strip() for v in row["filter"].split(",") if v.strip()],
+                )
+                for row in filter_data
             ]
+
         else:
             filters = self.filters
 

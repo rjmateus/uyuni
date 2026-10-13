@@ -778,7 +778,7 @@ class RepoSync(object):
                         raise
 
                     if self.show_packages_only:
-                        self.show_packages(plugin, repo_id)
+                        self.show_packages(plugin, data["id"])
                     elif plugin is not None:
                         if update_repodata:
                             plugin.clear_cache()

@@ -1363,23 +1363,38 @@ class RepoSync(object):
             log(0, "    No new patch to sync.")
         return processed_updates
 
-    def import_packages(self, plug, source_id, url, is_non_local_repo):
-        failed_packages = 0
-        if (not self.filters) and source_id:
+    def _load_db_filters(self, source_id):
+        filters = []
+
+        if source_id:
             h = rhnSQL.prepare("""
                     select flag, filter
                       from rhnContentSourceFilter
                      where source_id = :source_id
                      order by sort_order """)
             h.execute(source_id=source_id)
-            filter_data = h.fetchall_dict() or []
-            filters = [
-                (
-                    row["flag"],
-                    [v.strip() for v in row["filter"].split(",") if v.strip()],
-                )
-                for row in filter_data
-            ]
+            filters.extend(h.fetchall_dict() or [])
+
+        h = rhnSQL.prepare("""
+                select flag, filter
+                  from rhnChannelFilter
+                 where channel_id = :channel_id
+                 order by sort_order """)
+        h.execute(channel_id=int(self.channel["id"]))
+        filters.extend(h.fetchall_dict() or [])
+
+        return [
+            (
+                row["flag"],
+                [v.strip() for v in row["filter"].split(",") if v.strip()],
+            )
+            for row in filters
+        ]
+
+    def import_packages(self, plug, source_id, url, is_non_local_repo):
+        failed_packages = 0
+        if not self.filters:
+            filters = self._load_db_filters(source_id)
         else:
             filters = self.filters
 
@@ -1882,22 +1897,8 @@ class RepoSync(object):
         return affected_channels, failed_packages, all_packages, to_process
 
     def show_packages(self, plug, source_id):
-        if (not self.filters) and source_id:
-            h = rhnSQL.prepare("""
-                    select flag, filter
-                      from rhnContentSourceFilter
-                     where source_id = :source_id
-                     order by sort_order """)
-            h.execute(source_id=source_id)
-            filter_data = h.fetchall_dict() or []
-            filters = [
-                (
-                    row["flag"],
-                    [v.strip() for v in row["filter"].split(",") if v.strip()],
-                )
-                for row in filter_data
-            ]
-
+        if not self.filters:
+            filters = self._load_db_filters(source_id)
         else:
             filters = self.filters
 

@@ -337,6 +337,90 @@ class RepoSyncTest(unittest.TestCase):
         self.assertFalse(apply_async_mock.called)
 
     @patch("spacewalk.common.rhnConfig.initCFG", Mock())
+    def test_load_db_filters_merges_repo_then_channel(self):
+        rs = _init_reposync(self.reposync)
+        _mock_rhnsql(
+            self.reposync,
+            [
+                [
+                    {"flag": "+", "filter": "repo-a, repo-b"},
+                    {"flag": "-", "filter": "repo-c"},
+                ],
+                [
+                    {"flag": "-", "filter": "repo-a"},
+                    {"flag": "+", "filter": "channel-d"},
+                ],
+            ],
+        )
+
+        filters = rs._load_db_filters(42, lambda value: value.split(","))
+
+        self.assertEqual(
+            filters,
+            [
+                ("+", ["repo-a", "repo-b"]),
+                ("-", ["repo-c"]),
+                ("-", ["repo-a"]),
+                ("+", ["channel-d"]),
+            ],
+        )
+
+    @patch("spacewalk.common.rhnConfig.initCFG", Mock())
+    def test_load_db_filters_supports_channel_only(self):
+        rs = _init_reposync(self.reposync)
+        _mock_rhnsql(
+            self.reposync,
+            [[{"flag": "+", "filter": "pkg1 pkg2, pkg3"}]],
+        )
+
+        filters = rs._load_db_filters(
+            None, lambda value: self.reposync.re.split(r"[,\s]+", value)
+        )
+
+        self.assertEqual(filters, [("+", ["pkg1", "pkg2", "pkg3"])])
+
+    @patch("spacewalk.common.rhnConfig.initCFG", Mock())
+    @patch("spacewalk.satellite_tools.reposync.log", Mock())
+    def test_import_packages_uses_cli_filters_without_loading_db(self):
+        rs = _init_reposync(self.reposync, filters=[("+", ["cli-pkg"])])
+        rs._load_db_filters = Mock()
+        plug = self._mock_repo_plugin([])
+        cfg_component = MagicMock()
+        cfg_component.__enter__.return_value.MOUNT_POINT = "/tmp"
+
+        with patch(
+            "spacewalk.satellite_tools.reposync.cfg_component",
+            return_value=cfg_component,
+        ):
+            rs.import_packages(plug, 42, "http://example.com", 1)
+
+        rs._load_db_filters.assert_not_called()
+        plug.list_packages.assert_called_once_with(rs.filters, rs.latest)
+
+    @patch("spacewalk.common.rhnConfig.initCFG", Mock())
+    @patch("spacewalk.satellite_tools.reposync.log", Mock())
+    def test_show_packages_uses_merged_db_filters(self):
+        rs = _init_reposync(self.reposync)
+        expected_filters = [("+", ["repo-a"]), ("-", ["channel-a"])]
+        rs._load_db_filters = Mock(return_value=expected_filters)
+        plug = Mock()
+        plug.raw_list_packages = Mock(return_value=[])
+        plug.num_packages = 0
+        plug.num_excluded = 0
+        cfg_component = MagicMock()
+        cfg_component.__enter__.return_value.MOUNT_POINT = "/tmp"
+
+        with patch(
+            "spacewalk.satellite_tools.reposync.cfg_component",
+            return_value=cfg_component,
+        ):
+            rs.show_packages(plug, 42)
+
+        rs._load_db_filters.assert_called_once()
+        self.assertEqual(rs._load_db_filters.call_args[0][0], 42)
+        plug.raw_list_packages.assert_called_once_with(expected_filters)
+
+    @patch("spacewalk.common.rhnConfig.initCFG", Mock())
     @patch("spacewalk.satellite_tools.reposync.send_error_mail")
     def test_sync_raises_channel_timeout(self, send_error_mail):
         rs = self._create_mocked_reposync()
